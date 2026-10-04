@@ -1,0 +1,6 @@
+{
+  "name": "BolsiUni - Finanzas para Universitarios",
+  "description": "App de finanzas personales pensada para estudiantes universitarios en Colombia. Registra movimientos en COP, controla tu presupuesto mensual, alcanza metas de ahorro y analiza tu bolsillo con IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
