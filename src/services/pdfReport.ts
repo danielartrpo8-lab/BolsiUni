@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * Generador de informe en PDF para BolsiUni usando jsPDF
+ * Generador de informe en PDF para EduPlata usando jsPDF
  * 100% en el navegador del usuario, sin llamadas a backend.
  */
 
@@ -69,7 +69,7 @@ export function generateFinancialPDFReport(data: PDFReportData): void {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
-  doc.text('BolsiUni', margin, 13);
+  doc.text('EduPlata', margin, 13);
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
@@ -283,7 +283,7 @@ export function generateFinancialPDFReport(data: PDFReportData): void {
     doc.setTextColor(124, 58, 237); // Purple-600
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text('Consejos Personalizados de BolsiUni IA', margin, y);
+    doc.text('Consejos Personalizados de EduPlata IA', margin, y);
 
     y += 4;
     doc.setDrawColor(221, 214, 254);
@@ -354,7 +354,7 @@ export function generateFinancialPDFReport(data: PDFReportData): void {
     doc.setFontSize(7.5);
     doc.setTextColor(148, 163, 184); // Slate-400
     doc.text(
-      'BolsiUni - Tu app universitaria de finanzas personales | Hecho para estudiantes de Colombia',
+      'EduPlata - Tu app universitaria de finanzas personales | Hecho para estudiantes de Colombia',
       margin,
       pageHeight - 6
     );
@@ -362,6 +362,6 @@ export function generateFinancialPDFReport(data: PDFReportData): void {
   }
 
   // Descarga directa en el navegador
-  const fileName = `BolsiUni_Reporte_${(data.userProfile.name || 'Estudiante').replace(/\s+/g, '_')}_${today.replace(/\s+/g, '_')}.pdf`;
+  const fileName = `EduPlata_Reporte_${(data.userProfile.name || 'Estudiante').replace(/\s+/g, '_')}_${today.replace(/\s+/g, '_')}.pdf`;
   doc.save(fileName);
 }

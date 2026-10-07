@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * BolsiUni - Aplicación Web de Finanzas para Universitarios en Colombia
+ * EduPlata - Aplicación Web de Finanzas para Universitarios en Colombia
  * Componente principal que orquesta estado, persistencia local y vistas.
  */
 

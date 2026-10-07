@@ -54,7 +54,7 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({
     {
       id: 'welcome',
       sender: 'assistant',
-      text: `¡Hola ${userProfile.name.split(' ')[0] || 'parcero'}! 👋 Soy tu asesor BolsiUni con IA. Conozco tus movimientos, tu presupuesto y tus metas de ahorro.\n\nPuedes preguntarme cosas como "¿Me alcanza para ir a un concierto este mes?", "¿Cuánto me queda después de pagar el transporte?", o pedirme ideas para ahorrar en la cafetería. ¿Qué duda tienes sobre tu plata?`,
+      text: `¡Hola ${userProfile.name.split(' ')[0] || 'parcero'}! 👋 Soy tu asesor EduPlata con IA. Conozco tus movimientos, tu presupuesto y tus metas de ahorro.\n\nPuedes preguntarme cosas como "¿Me alcanza para ir a un concierto este mes?", "¿Cuánto me queda después de pagar el transporte?", o pedirme ideas para ahorrar en la cafetería. ¿Qué duda tienes sobre tu plata?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -388,7 +388,7 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({
               </div>
               <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-2.5 text-xs text-slate-500 flex items-center gap-2">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>BolsiUni está revisando tus cuentas y pensando...</span>
+                <span>EduPlata está revisando tus cuentas y pensando...</span>
               </div>
             </div>
           )}

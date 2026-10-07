@@ -103,7 +103,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(allData, null, 2));
     const dlAnchorElem = document.createElement('a');
     dlAnchorElem.setAttribute('href', dataStr);
-    dlAnchorElem.setAttribute('download', `BolsiUni_Backup_${new Date().toISOString().slice(0, 10)}.json`);
+    dlAnchorElem.setAttribute('download', `EduPlata_Backup_${new Date().toISOString().slice(0, 10)}.json`);
     dlAnchorElem.click();
   };
 
@@ -118,7 +118,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onImportData(parsed);
             alert('¡Datos restaurados con éxito desde el archivo!');
           } else {
-            alert('El archivo no parece ser un respaldo válido de BolsiUni.');
+            alert('El archivo no parece ser un respaldo válido de EduPlata.');
           }
         } catch (err) {
           alert('Error al leer el archivo JSON.');

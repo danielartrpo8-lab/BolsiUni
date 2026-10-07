@@ -126,7 +126,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 {initialGoal ? 'Editar Meta de Ahorro' : 'Nueva Meta de Ahorro'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Ponte una meta clara y BolsiUni te dirá cuánto ahorrar por semana
+                Ponte una meta clara y EduPlata te dirá cuánto ahorrar por semana
               </p>
             </div>
           </div>

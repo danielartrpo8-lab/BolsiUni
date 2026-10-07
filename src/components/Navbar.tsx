@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * Barra de navegación superior de BolsiUni
+ * Barra de navegación superior de EduPlata
  */
 
 import React from 'react';
@@ -40,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-emerald-600 via-teal-600 to-violet-600 dark:from-emerald-400 dark:to-violet-400 bg-clip-text text-transparent">
-                BolsiUni
+                EduPlata
               </span>
               <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800/60 hidden sm:inline-flex items-center gap-1">
                 🇨🇴 COP

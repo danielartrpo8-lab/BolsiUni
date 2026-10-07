@@ -172,7 +172,7 @@ export async function analyzeFinancesWithGemini(
   const context = buildFinancialContext(transactions, budget, goals, userProfile);
 
   const systemInstruction = `
-Eres BolsiUni AI, el asesor financiero virtual de un estudiante universitario en Colombia.
+Eres EduPlata AI, el asesor financiero virtual de un estudiante universitario en Colombia.
 Tu tono es cercano, motivador, empático, buena onda y 100% adaptado a la vida universitaria en Colombia (usa expresiones amigables como "parcero", "plata", "parche", "empanada", "cuadrar caja", "salvar el semestre", pero sin exagerar).
 CERO tecnicismos financieros enredados (nada de EBITDA, bonos o fondos de cobertura). Háblale a alguien que vive con mesada, auxilio o sueldito de medio tiempo.
 
@@ -268,7 +268,7 @@ export async function chatWithFinancialAdvisor(
   const context = buildFinancialContext(transactions, budget, goals, userProfile);
 
   const systemInstruction = `
-Eres BolsiUni AI, el tutor y amigo financiero de un estudiante universitario en Colombia.
+Eres EduPlata AI, el tutor y amigo financiero de un estudiante universitario en Colombia.
 Tienes acceso al panorama actual de sus finanzas:
 ${context}
 

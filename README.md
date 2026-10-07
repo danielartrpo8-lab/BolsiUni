@@ -1,6 +1,6 @@
-# 🇨🇴 BolsiUni - Finanzas para Universitarios
+# 🇨🇴 EduPlata - Finanzas para Universitarios
 
-**BolsiUni** es una aplicación web moderna de finanzas personales diseñada especialmente para estudiantes universitarios en Colombia que administran presupuestos ajustados (mesada familiar, auxilios de sostenimiento, becas o trabajos de medio tiempo).
+**EduPlata** es una aplicación web moderna de finanzas personales diseñada especialmente para estudiantes universitarios en Colombia que administran presupuestos ajustados (mesada familiar, auxilios de sostenimiento, becas o trabajos de medio tiempo).
 
 Permite registrar gastos del día a día (almuerzos corrientazos, fotocopias, pasajes de bus/metro, polas de viernes), fijar presupuestos mensuales con alertas visuales, planificar metas de ahorro con cálculo de ritmo semanal/mensual, generar reportes en PDF y recibir diagnósticos inteligentes con **Google Gemini AI**.
 
@@ -42,7 +42,7 @@ Permite registrar gastos del día a día (almuerzos corrientazos, fotocopias, pa
 
 6. **Informe en PDF:**
    - Descarga directa en el navegador generada con `jsPDF`.
-   - Incluye membrete con la marca BolsiUni, datos del estudiante, KPIs, tabla completa de gastos por categoría, estado de las metas y los consejos de la IA.
+   - Incluye membrete con la marca EduPlata, datos del estudiante, KPIs, tabla completa de gastos por categoría, estado de las metas y los consejos de la IA.
 
 7. **Extras:**
    - Modo Claro y Modo Oscuro con detección de preferencia del sistema.
@@ -92,7 +92,7 @@ La app utiliza la inteligencia artificial de Google Gemini sin cobrarte nada:
 1. Ve a [Google AI Studio](https://aistudio.google.com/apikey) e inicia sesión con tu cuenta de Google.
 2. Haz clic en el botón azul **"Create API key"** (o "Crear clave de API").
 3. Selecciona tu proyecto o crea uno nuevo en un clic y copia la clave generada (empieza por `AIzaSy...`).
-4. En **BolsiUni**, dirígete a la pestaña **Configuración** ⚙️ y pégala en el campo correspondiente.
+4. En **EduPlata**, dirígete a la pestaña **Configuración** ⚙️ y pégala en el campo correspondiente.
 5. Haz clic en **"Probar Conexión"** y luego en **"Guardar Clave"**.
 
 > 💡 **Nota de Seguridad:** La clave queda guardada **únicamente en tu propio navegador** mediante `localStorage`. Ningún tercero tiene acceso a ella.
@@ -107,7 +107,7 @@ La aplicación está preparada para compilarse como un sitio 100% estático fron
    ```bash
    git init
    git add .
-   git commit -m "Initial commit BolsiUni"
+   git commit -m "Initial commit EduPlata"
    git branch -M main
    git remote add origin https://github.com/TU-USUARIO/bolsiuni.git
    git push -u origin main

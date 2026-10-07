@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * Datos iniciales (vacíos) y datos de ejemplo para BolsiUni
+ * Datos iniciales (vacíos) y datos de ejemplo para EduPlata
  * Contextualizados para un estudiante universitario en Colombia
  */
 

@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * BolsiUni - Tipos y modelos de datos
+ * EduPlata - Tipos y modelos de datos
  * Diseñado específicamente para finanzas de estudiantes universitarios en Colombia.
  */
 

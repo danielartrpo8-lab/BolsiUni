@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * Categorías y catálogo de BolsiUni
+ * Categorías y catálogo de EduPlata
  * Orientado al contexto y jerga universitaria en Colombia
  */
 
