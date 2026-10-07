@@ -2,20 +2,48 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * Datos de ejemplo iniciales para BolsiUni
+ * Datos iniciales (vacíos) y datos de ejemplo para BolsiUni
  * Contextualizados para un estudiante universitario en Colombia
  */
 
 import { BudgetConfig, SavingsGoal, Transaction, UserProfile } from '../types';
 
+// Estado inicial: la app arranca en ceros para que cada estudiante ingrese sus datos
 export const INITIAL_USER_PROFILE: UserProfile = {
+  name: '',
+  university: '',
+  career: '',
+  semester: ''
+};
+
+export const INITIAL_BUDGET: BudgetConfig = {
+  monthlyIncomeTarget: 0,
+  monthlyExpenseLimit: 0,
+  categoryLimits: {
+    comida: 0,
+    transporte: 0,
+    fotocopias: 0,
+    ocio: 0,
+    suscripciones: 0,
+    salud: 0,
+    matricula: 0,
+    otros: 0
+  }
+};
+
+export const INITIAL_TRANSACTIONS: Transaction[] = [];
+
+export const INITIAL_SAVINGS_GOALS: SavingsGoal[] = [];
+
+// Datos de ejemplo (botón "Restablecer datos de ejemplo" en Configuración)
+export const SAMPLE_USER_PROFILE: UserProfile = {
   name: 'Camilo Restrepo',
   university: 'Universidad de Colombia',
   career: 'Ingeniería de Sistemas',
   semester: '5to Semestre'
 };
 
-export const INITIAL_BUDGET: BudgetConfig = {
+export const SAMPLE_BUDGET: BudgetConfig = {
   monthlyIncomeTarget: 870000,
   monthlyExpenseLimit: 750000,
   categoryLimits: {
@@ -40,7 +68,7 @@ function getDate(day: number): string {
   return `${currentYear}-${currentMonth}-${String(safeDay).padStart(2, '0')}`;
 }
 
-export const INITIAL_TRANSACTIONS: Transaction[] = [
+export const SAMPLE_TRANSACTIONS: Transaction[] = [
   {
     id: 'tx-1',
     type: 'income',
@@ -178,7 +206,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
   }
 ];
 
-export const INITIAL_SAVINGS_GOALS: SavingsGoal[] = [
+export const SAMPLE_SAVINGS_GOALS: SavingsGoal[] = [
   {
     id: 'goal-1',
     title: 'Portátil nuevo para programar (Ryzen 5 / 16GB)',

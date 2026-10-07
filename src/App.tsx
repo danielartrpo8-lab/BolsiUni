@@ -30,18 +30,22 @@ import {
   INITIAL_BUDGET, 
   INITIAL_SAVINGS_GOALS, 
   INITIAL_TRANSACTIONS, 
-  INITIAL_USER_PROFILE 
+  INITIAL_USER_PROFILE,
+  SAMPLE_BUDGET,
+  SAMPLE_SAVINGS_GOALS,
+  SAMPLE_TRANSACTIONS,
+  SAMPLE_USER_PROFILE
 } from './data/initialData';
 import { getStoredApiKey } from './services/gemini';
 import { generateFinancialPDFReport } from './services/pdfReport';
 import { Plus } from 'lucide-react';
 
 const STORAGE_KEYS = {
-  TRANSACTIONS: 'bolsiuni_transactions',
-  BUDGET: 'bolsiuni_budget',
-  GOALS: 'bolsiuni_goals',
-  PROFILE: 'bolsiuni_profile',
-  AI_ANALYSIS: 'bolsiuni_ai_analysis',
+  TRANSACTIONS: 'bolsiuni_v2_transactions',
+  BUDGET: 'bolsiuni_v2_budget',
+  GOALS: 'bolsiuni_v2_goals',
+  PROFILE: 'bolsiuni_v2_profile',
+  AI_ANALYSIS: 'bolsiuni_v2_ai_analysis',
   DARK_MODE: 'bolsiuni_dark_mode'
 };
 
@@ -266,10 +270,10 @@ export default function App() {
 
   // Restablecer Datos de Ejemplo
   const handleResetSampleData = () => {
-    setTransactions(INITIAL_TRANSACTIONS);
-    setBudget(INITIAL_BUDGET);
-    setGoals(INITIAL_SAVINGS_GOALS);
-    setUserProfile(INITIAL_USER_PROFILE);
+    setTransactions(SAMPLE_TRANSACTIONS);
+    setBudget(SAMPLE_BUDGET);
+    setGoals(SAMPLE_SAVINGS_GOALS);
+    setUserProfile(SAMPLE_USER_PROFILE);
     setAiAnalysis(null);
   };
 

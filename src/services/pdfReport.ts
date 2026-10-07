@@ -94,7 +94,7 @@ export function generateFinancialPDFReport(data: PDFReportData): void {
   doc.setTextColor(51, 65, 85); // Slate-700
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.text(`Estudiante: ${data.userProfile.name}`, margin + 4, y + 6);
+  doc.text(`Estudiante: ${data.userProfile.name || 'Sin nombre'}`, margin + 4, y + 6);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
@@ -362,6 +362,6 @@ export function generateFinancialPDFReport(data: PDFReportData): void {
   }
 
   // Descarga directa en el navegador
-  const fileName = `BolsiUni_Reporte_${data.userProfile.name.replace(/\s+/g, '_')}_${today.replace(/\s+/g, '_')}.pdf`;
+  const fileName = `BolsiUni_Reporte_${(data.userProfile.name || 'Estudiante').replace(/\s+/g, '_')}_${today.replace(/\s+/g, '_')}.pdf`;
   doc.save(fileName);
 }
