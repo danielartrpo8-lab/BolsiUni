@@ -17,6 +17,7 @@ interface TransactionModalProps {
   onSave: (transaction: Omit<Transaction, 'id' | 'createdAt'>, existingId?: string) => void;
   onDelete?: (id: string) => void;
   initialTransaction?: Transaction | null;
+  defaultType?: MovementType;
 }
 
 export const TransactionModal: React.FC<TransactionModalProps> = ({
@@ -24,11 +25,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   onClose,
   onSave,
   onDelete,
-  initialTransaction
+  initialTransaction,
+  defaultType = 'expense'
 }) => {
-  const [type, setType] = useState<MovementType>('expense');
+  const [type, setType] = useState<MovementType>(defaultType);
   const [amountStr, setAmountStr] = useState<string>('');
-  const [category, setCategory] = useState<CategoryId>('comida');
+  const [category, setCategory] = useState<CategoryId>(defaultType === 'income' ? 'mesada' : 'comida');
   const [date, setDate] = useState<string>(getTodayDateString());
   const [note, setNote] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -41,14 +43,15 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setDate(initialTransaction.date);
       setNote(initialTransaction.note || '');
     } else {
-      setType('expense');
+      const initType = defaultType || 'expense';
+      setType(initType);
       setAmountStr('');
-      setCategory('comida');
+      setCategory(initType === 'income' ? 'mesada' : 'comida');
       setDate(getTodayDateString());
       setNote('');
     }
     setError('');
-  }, [initialTransaction, isOpen]);
+  }, [initialTransaction, isOpen, defaultType]);
 
   // Cuando cambia el tipo, ajustar la categoría por defecto si no concuerda
   const handleTypeChange = (newType: MovementType) => {
@@ -347,7 +350,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25 transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-sm transition-all cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>{initialTransaction ? 'Guardar Cambios' : 'Registrar'}</span>

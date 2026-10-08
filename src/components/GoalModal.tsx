@@ -19,7 +19,7 @@ interface GoalModalProps {
 }
 
 const EMOJI_OPTIONS = ['💻', '🏖️', '🎒', '📚', '🍕', '🎮', '🛵', '🎧', '👟', '👕', '🎫', '🎓'];
-const COLOR_OPTIONS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#3b82f6'];
+const COLOR_OPTIONS = ['#059669', '#0d9488', '#0f766e', '#d97706', '#e11d48', '#475569'];
 
 export const GoalModal: React.FC<GoalModalProps> = ({
   isOpen,
@@ -33,7 +33,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
   const [currentAmountStr, setCurrentAmountStr] = useState('');
   const [deadline, setDeadline] = useState('');
   const [emoji, setEmoji] = useState('💻');
-  const [color, setColor] = useState('#8b5cf6');
+  const [color, setColor] = useState('#059669');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
 
@@ -59,7 +59,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
       setCurrentAmountStr('0');
       setDeadline(defaultDeadline());
       setEmoji('💻');
-      setColor('#8b5cf6');
+      setColor('#059669');
       setNotes('');
     }
     setError('');
@@ -118,7 +118,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
         {/* Cabecera */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-violet-100 dark:bg-violet-950/80 flex items-center justify-center text-violet-600 dark:text-violet-400">
+            <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
               <Target className="w-5 h-5" />
             </div>
             <div>
@@ -132,7 +132,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -151,28 +151,28 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleQuickPreset('Portátil nuevo para la carrera', '💻', 2500000)}
-                  className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-violet-100 dark:bg-slate-800 dark:hover:bg-violet-950/60 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                 >
                   💻 Portátil ($2.5M)
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickPreset('Viaje de fin de semestre', '🏖️', 600000)}
-                  className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-violet-100 dark:bg-slate-800 dark:hover:bg-violet-950/60 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                 >
                   🏖️ Viaje ($600K)
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickPreset('Fondo de emergencia fotocopias', '🎒', 150000)}
-                  className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-violet-100 dark:bg-slate-800 dark:hover:bg-violet-950/60 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                 >
                   🎒 Fondo de U ($150K)
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickPreset('Pizza de fin de parciales', '🍕', 60000)}
-                  className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-violet-100 dark:bg-slate-800 dark:hover:bg-violet-950/60 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                 >
                   🍕 Pizza celebración ($60K)
                 </button>
@@ -212,7 +212,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 placeholder="Ej: Portátil nuevo, Concierto, Viaje"
                 maxLength={60}
                 required
-                className="w-full px-3.5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full px-3.5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
               />
             </div>
           </div>
@@ -234,7 +234,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                   onChange={(e) => setTargetAmountStr(e.target.value.replace(/[^0-9]/g, ''))}
                   placeholder="600.000"
                   required
-                  className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
                 />
               </div>
             </div>
@@ -253,7 +253,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                   value={currentAmountStr ? parseInt(currentAmountStr.replace(/[^0-9]/g, ''), 10).toLocaleString('es-CO') : ''}
                   onChange={(e) => setCurrentAmountStr(e.target.value.replace(/[^0-9]/g, ''))}
                   placeholder="0"
-                  className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-mono font-bold text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
                 />
               </div>
             </div>
@@ -269,7 +269,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
             />
           </div>
 
@@ -301,7 +301,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Ej: Alojamiento con el parche y pasajes terrestres"
               rows={2}
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder:text-slate-400"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 placeholder:text-slate-400"
             />
           </div>
 
@@ -335,13 +335,13 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-600/25 transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-sm transition-all cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>{initialGoal ? 'Guardar Cambios' : 'Crear Meta'}</span>

@@ -24,7 +24,7 @@ import { formatCOP, formatDate } from '../../utils/formatters';
 
 interface TransactionsViewProps {
   transactions: Transaction[];
-  onOpenAddModal: () => void;
+  onOpenAddModal: (defaultType?: MovementType) => void;
   onEditTransaction: (t: Transaction) => void;
   onDeleteTransaction: (id: string) => void;
 }
@@ -108,13 +108,29 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onOpenAddModal}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Agregar Movimiento</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onOpenAddModal('income')}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/80 dark:hover:bg-teal-900 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold transition-all cursor-pointer shadow-xs"
+          >
+            <ArrowUpRight className="w-4 h-4" />
+            <span>+ Ingreso</span>
+          </button>
+          <button
+            onClick={() => onOpenAddModal('expense')}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/80 dark:hover:bg-rose-900 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold transition-all cursor-pointer shadow-xs"
+          >
+            <ArrowDownLeft className="w-4 h-4" />
+            <span>+ Gasto</span>
+          </button>
+          <button
+            onClick={() => onOpenAddModal('expense')}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Movimiento</span>
+          </button>
+        </div>
       </div>
 
       {/* CONTROLES DE FILTRADO Y BÚSQUEDA */}
@@ -257,21 +273,29 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               ? 'Prueba cambiando o limpiando los filtros de búsqueda.'
               : 'Empieza a registrar tus gastos e ingresos universitarios para no perder la cuenta de tu mesada.'}
           </p>
-          <div className="mt-4 flex items-center justify-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             {hasActiveFilters ? (
               <button
                 onClick={clearFilters}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
               >
                 Limpiar filtros
               </button>
             ) : (
-              <button
-                onClick={onOpenAddModal}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white"
-              >
-                Registrar primer movimiento
-              </button>
+              <>
+                <button
+                  onClick={() => onOpenAddModal('income')}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white cursor-pointer shadow-xs"
+                >
+                  + Agregar Ingreso
+                </button>
+                <button
+                  onClick={() => onOpenAddModal('expense')}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer shadow-xs"
+                >
+                  + Agregar Gasto
+                </button>
+              </>
             )}
           </div>
         </div>

@@ -17,7 +17,8 @@ import {
   Edit3, 
   Info, 
   ArrowUpRight,
-  TrendingDown
+  TrendingDown,
+  SlidersHorizontal
 } from 'lucide-react';
 import { BudgetConfig, ExpenseCategoryId, Transaction } from '../../types';
 import { EXPENSE_CATEGORIES } from '../../utils/categories';
@@ -27,18 +28,21 @@ interface BudgetViewProps {
   budget: BudgetConfig;
   transactions: Transaction[];
   onUpdateBudget: (newBudget: BudgetConfig) => void;
+  onOpenBudgetModal?: () => void;
 }
 
 export const BudgetView: React.FC<BudgetViewProps> = ({
   budget,
   transactions,
-  onUpdateBudget
+  onUpdateBudget,
+  onOpenBudgetModal
 }) => {
   const [isEditingGlobal, setIsEditingGlobal] = useState(false);
   const [globalLimitStr, setGlobalLimitStr] = useState(budget.monthlyExpenseLimit.toString());
 
   const [editingCategory, setEditingCategory] = useState<ExpenseCategoryId | null>(null);
   const [catLimitStr, setCatLimitStr] = useState('');
+  const [budgetError, setBudgetError] = useState<string | null>(null);
 
   // Gastos del mes agrupados por categoría
   const categorySpent = useMemo(() => {
@@ -59,10 +63,21 @@ export const BudgetView: React.FC<BudgetViewProps> = ({
     ? Math.round((totalSpent / budget.monthlyExpenseLimit) * 100)
     : 0;
 
+  const totalAllocatedSpecific = useMemo(() => {
+    return Object.values(budget.categoryLimits).reduce((s, v) => s + (v || 0), 0);
+  }, [budget.categoryLimits]);
+
   const handleSaveGlobal = (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseInt(globalLimitStr.replace(/[^0-9]/g, ''), 10);
     if (!isNaN(val) && val >= 0) {
+      if (val > 0 && totalAllocatedSpecific > val) {
+        setBudgetError(
+          `El presupuesto mensual (${formatCOP(val)}) no puede ser menor que la suma de tus gastos específicos asignados (${formatCOP(totalAllocatedSpecific)}).`
+        );
+        return;
+      }
+      setBudgetError(null);
       onUpdateBudget({
         ...budget,
         monthlyExpenseLimit: val
@@ -73,15 +88,24 @@ export const BudgetView: React.FC<BudgetViewProps> = ({
 
   const handleStartEditCat = (catId: ExpenseCategoryId) => {
     setEditingCategory(catId);
+    setBudgetError(null);
     setCatLimitStr((budget.categoryLimits[catId] || 0).toString());
   };
 
   const handleSaveCatLimit = (catId: ExpenseCategoryId) => {
-    const val = parseInt(catLimitStr.replace(/[^0-9]/g, ''), 10);
+    const val = parseInt(catLimitStr.replace(/[^0-9]/g, ''), 10) || 0;
     const newLimits = {
       ...budget.categoryLimits,
-      [catId]: isNaN(val) ? 0 : val
+      [catId]: val
     };
+    const newTotalSpecific = Object.values(newLimits).reduce((s, v) => s + (v || 0), 0);
+    if (budget.monthlyExpenseLimit > 0 && newTotalSpecific > budget.monthlyExpenseLimit) {
+      setBudgetError(
+        `No se puede asignar ${formatCOP(val)} a ${EXPENSE_CATEGORIES[catId]?.name || catId}. La suma de gastos específicos (${formatCOP(newTotalSpecific)}) superaría tu presupuesto total (${formatCOP(budget.monthlyExpenseLimit)}).`
+      );
+      return;
+    }
+    setBudgetError(null);
     onUpdateBudget({
       ...budget,
       categoryLimits: newLimits
@@ -102,7 +126,31 @@ export const BudgetView: React.FC<BudgetViewProps> = ({
             Define topes máximos para no gastar de más en comida, salidas o fotocopias
           </p>
         </div>
+        {onOpenBudgetModal && (
+          <button
+            onClick={onOpenBudgetModal}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-xs font-bold transition-all shadow-sm cursor-pointer self-start sm:self-auto"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span>Configurar Todos los Límites</span>
+          </button>
+        )}
       </div>
+
+      {budgetError && (
+        <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between gap-2 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+            <span>{budgetError}</span>
+          </div>
+          <button
+            onClick={() => setBudgetError(null)}
+            className="text-xs underline font-bold shrink-0 text-rose-800 dark:text-rose-200"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
 
       {/* TARJETA DEL PRESUPUESTO GLOBAL */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
@@ -353,7 +401,7 @@ export const BudgetView: React.FC<BudgetViewProps> = ({
             Llevar almuerzo de casa 2 días a la semana te ahorra cerca de $120.000 al mes en corrientazos.
           </div>
           <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <strong className="block text-violet-400 mb-1">🚌 Tarifa estudiantil de transporte</strong>
+            <strong className="block text-teal-400 mb-1">🚌 Tarifa estudiantil de transporte</strong>
             Pregunta en bienestar universitario por el auxilio o descuento de pasajes del sistema integrado.
           </div>
           <div className="p-3 rounded-2xl bg-white/5 border border-white/10">

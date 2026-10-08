@@ -146,7 +146,7 @@ export const GoalDepositModal: React.FC<GoalDepositModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleQuickAdd(remaining)}
-                  className="text-xs px-3 py-1.5 rounded-xl bg-violet-100 dark:bg-violet-950/80 hover:bg-violet-200 text-violet-700 dark:text-violet-300 font-bold transition-colors"
+                  className="text-xs px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-white transition-colors cursor-pointer"
                 >
                   Completar ({formatCOP(remaining)})
                 </button>
@@ -164,13 +164,13 @@ export const GoalDepositModal: React.FC<GoalDepositModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/25 transition-all"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-sm transition-all cursor-pointer"
             >
               <PiggyBank className="w-4 h-4" />
               <span>Guardar Ahorro</span>

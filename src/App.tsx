@@ -18,6 +18,8 @@ import { SettingsView } from './components/views/SettingsView';
 import { TransactionModal } from './components/TransactionModal';
 import { GoalModal } from './components/GoalModal';
 import { GoalDepositModal } from './components/GoalDepositModal';
+import { BalanceAdjustmentModal } from './components/BalanceAdjustmentModal';
+import { BudgetModal } from './components/BudgetModal';
 import { 
   ActiveTab, 
   AIAnalysisResult, 
@@ -38,6 +40,7 @@ import {
 } from './data/initialData';
 import { getStoredApiKey } from './services/gemini';
 import { generateFinancialPDFReport } from './services/pdfReport';
+import { exportTransactionsToExcel } from './services/excelReport';
 import { Plus } from 'lucide-react';
 
 const STORAGE_KEYS = {
@@ -188,6 +191,9 @@ export default function App() {
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [depositGoal, setDepositGoal] = useState<SavingsGoal | null>(null);
 
+  const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+
   // Cálculo del saldo general en tiempo real
   const currentBalance = useMemo(() => {
     const inc = transactions
@@ -268,6 +274,45 @@ export default function App() {
     });
   };
 
+  // Generar y Descargar en Excel
+  const handleExportExcel = () => {
+    exportTransactionsToExcel(transactions, userProfile, budget);
+  };
+
+  // Ajustar Saldo en Bolsillo directamente
+  const handleSaveAdjustedBalance = (newBalance: number, note: string, resetAll: boolean) => {
+    if (resetAll) {
+      if (newBalance > 0) {
+        const initTx: Transaction = {
+          id: `tx-init-${Date.now()}`,
+          type: 'income',
+          amount: newBalance,
+          category: 'mesada',
+          date: new Date().toISOString().slice(0, 10),
+          note: note || 'Saldo inicial en bolsillo',
+          createdAt: Date.now()
+        };
+        setTransactions([initTx]);
+      } else {
+        setTransactions([]);
+      }
+    } else {
+      const diff = newBalance - currentBalance;
+      if (diff === 0) return;
+      const adjustTx: Transaction = {
+        id: `tx-adj-${Date.now()}`,
+        type: diff > 0 ? 'income' : 'expense',
+        amount: Math.abs(diff),
+        category: diff > 0 ? 'mesada' : 'otros',
+        date: new Date().toISOString().slice(0, 10),
+        note: note || 'Ajuste de saldo en bolsillo',
+        createdAt: Date.now()
+      };
+      setTransactions((prev) => [adjustTx, ...prev]);
+    }
+    setIsBalanceModalOpen(false);
+  };
+
   // Restablecer Datos de Ejemplo
   const handleResetSampleData = () => {
     setTransactions(SAMPLE_TRANSACTIONS);
@@ -316,6 +361,7 @@ export default function App() {
         onToggleDarkMode={() => setDarkMode(!darkMode)}
         balance={currentBalance}
         onExportPDF={handleExportPDF}
+        onExportExcel={handleExportExcel}
         hasApiKey={hasApiKey}
         onOpenSettings={() => setActiveTab('settings')}
         studentName={userProfile.name}
@@ -335,7 +381,10 @@ export default function App() {
             transactions={transactions}
             budget={budget}
             goals={goals}
-            onOpenAddModal={() => {
+            userProfile={userProfile}
+            onUpdateUserName={(name) => setUserProfile((prev) => ({ ...prev, name }))}
+            onUpdateProfile={(partial) => setUserProfile((prev) => ({ ...prev, ...partial }))}
+            onOpenAddModal={(defaultType) => {
               setSelectedTx(null);
               setIsTxModalOpen(true);
             }}
@@ -345,6 +394,13 @@ export default function App() {
             }}
             onNavigateTab={(tab) => setActiveTab(tab)}
             hasApiKey={hasApiKey}
+            onOpenBalanceAdjustment={() => setIsBalanceModalOpen(true)}
+            onOpenBudgetModal={() => setIsBudgetModalOpen(true)}
+            onLoadSampleData={handleResetSampleData}
+            onResetToZeros={handleClearAllData}
+            isShowingSampleData={transactions.length > 0 && transactions[0].id === 'tx-1'}
+            onExportPDF={handleExportPDF}
+            onExportExcel={handleExportExcel}
           />
         )}
 
@@ -368,6 +424,7 @@ export default function App() {
             budget={budget}
             transactions={transactions}
             onUpdateBudget={(newBudget) => setBudget(newBudget)}
+            onOpenBudgetModal={() => setIsBudgetModalOpen(true)}
           />
         )}
 
@@ -428,7 +485,7 @@ export default function App() {
           setSelectedTx(null);
           setIsTxModalOpen(true);
         }}
-        className="md:hidden fixed right-4 bottom-20 z-30 w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-xl shadow-emerald-600/30 flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+        className="md:hidden fixed right-4 bottom-20 z-30 w-14 h-14 rounded-2xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xl shadow-slate-900/30 flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform"
         title="Registrar movimiento"
       >
         <Plus className="w-7 h-7" />
@@ -465,6 +522,23 @@ export default function App() {
         }}
         goal={depositGoal}
         onDeposit={handleDepositToGoal}
+      />
+
+      <BalanceAdjustmentModal
+        isOpen={isBalanceModalOpen}
+        onClose={() => setIsBalanceModalOpen(false)}
+        currentBalance={currentBalance}
+        onSaveBalance={handleSaveAdjustedBalance}
+      />
+
+      <BudgetModal
+        isOpen={isBudgetModalOpen}
+        onClose={() => setIsBudgetModalOpen(false)}
+        budget={budget}
+        onSaveBudget={(newBudget) => {
+          setBudget(newBudget);
+          setIsBudgetModalOpen(false);
+        }}
       />
 
     </div>

@@ -57,13 +57,13 @@ export function generateFinancialPDFReport(data: PDFReportData): void {
   const sortedCategories = Object.entries(categoryExpenses).sort(([, a], [, b]) => b - a);
 
   // --- HEADER BANNER ---
-  // Fondo superior esmeralda oscuro / púrpura
-  doc.setFillColor(16, 185, 129); // Emerald-500
+  // Fondo superior: carbón elegante y verde bosque sobrio
+  doc.setFillColor(30, 41, 59); // Slate-800
   doc.rect(0, 0, pageWidth, 28, 'F');
 
-  // Acento morado
-  doc.setFillColor(124, 58, 237); // Purple-600
-  doc.rect(pageWidth - 40, 0, 40, 28, 'F');
+  // Acento sobrio en verde bosque
+  doc.setFillColor(21, 128, 61); // Emerald-700
+  doc.rect(pageWidth - 35, 0, 35, 28, 'F');
 
   // Título y branding
   doc.setTextColor(255, 255, 255);
@@ -89,23 +89,32 @@ export function generateFinancialPDFReport(data: PDFReportData): void {
   // --- INFO DEL ESTUDIANTE ---
   doc.setFillColor(248, 250, 252); // Slate-50
   doc.setDrawColor(226, 232, 240); // Slate-200
-  doc.roundedRect(margin, y, contentWidth, 14, 2, 2, 'FD');
+  doc.roundedRect(margin, y, contentWidth, 16, 2, 2, 'FD');
 
-  doc.setTextColor(51, 65, 85); // Slate-700
+  const studentName = data.userProfile.name?.trim() 
+    ? data.userProfile.name.trim() 
+    : 'No registrado';
+  const universityName = data.userProfile.university?.trim() 
+    ? data.userProfile.university.trim() 
+    : 'No registrada';
+
+  doc.setTextColor(30, 41, 59); // Slate-800
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text(`Estudiante: ${data.userProfile.name || 'Sin nombre'}`, margin + 4, y + 6);
+  doc.setFontSize(10.5);
+  doc.text(`Estudiante: ${studentName}`, margin + 4, y + 6);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
-  doc.setTextColor(100, 116, 139); // Slate-500
-  doc.text(
-    `${data.userProfile.university || 'Universidad'} • ${data.userProfile.career || 'Estudiante'} • ${data.userProfile.semester || ''}`,
-    margin + 4,
-    y + 10.5
-  );
+  doc.setTextColor(71, 85, 105); // Slate-600
+  const careerSemester = [
+    data.userProfile.career?.trim() ? `Carrera: ${data.userProfile.career.trim()}` : '',
+    data.userProfile.semester?.trim() ? data.userProfile.semester.trim() : ''
+  ].filter(Boolean).join(' • ');
 
-  y += 19;
+  const uniLine = `Universidad: ${universityName}${careerSemester ? ` • ${careerSemester}` : ''}`;
+  doc.text(uniLine, margin + 4, y + 11.5);
+
+  y += 21;
 
   // --- TARJETAS KPI DE RESUMEN ---
   const kpiWidth = (contentWidth - 6) / 3;
@@ -124,12 +133,12 @@ export function generateFinancialPDFReport(data: PDFReportData): void {
   doc.setFontSize(13);
   doc.text(formatCOP(balance), margin + 4, y + 14);
 
-  // KPI 2: Ingresos del Mes
-  doc.setFillColor(245, 243, 255); // Violet-50
-  doc.setDrawColor(221, 214, 254); // Violet-200
+  // KPI 2: Ingresos del Mes (Slate sobrio)
+  doc.setFillColor(241, 245, 249); // Slate-100
+  doc.setDrawColor(203, 213, 225); // Slate-300
   doc.roundedRect(margin + kpiWidth + 3, y, kpiWidth, kpiHeight, 2, 2, 'FD');
 
-  doc.setTextColor(91, 33, 182); // Violet-800
+  doc.setTextColor(30, 41, 59); // Slate-800
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.text('INGRESOS MES', margin + kpiWidth + 7, y + 6);

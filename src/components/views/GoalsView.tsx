@@ -58,7 +58,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
 
         <button
           onClick={onOpenCreateModal}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-sm shadow-md shadow-violet-600/20 transition-all cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 font-bold text-sm shadow-sm transition-all cursor-pointer"
         >
           <Plus className="w-5 h-5" />
           <span>Nueva Meta</span>
@@ -68,8 +68,8 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
       {/* TARJETA DE PROGRESO GLOBAL DE AHORRO */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-500 to-emerald-500 flex items-center justify-center text-white shadow-md text-2xl">
-            🐷
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-800 dark:text-slate-200 text-2xl shadow-xs">
+            🎯
           </div>
           <div>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -87,11 +87,11 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
         <div className="w-full md:w-64 space-y-1.5">
           <div className="flex justify-between items-center text-xs">
             <span className="font-semibold text-slate-500">Progreso general</span>
-            <span className="font-bold font-mono text-violet-600 dark:text-violet-400">{globalProgress}%</span>
+            <span className="font-bold font-mono text-emerald-700 dark:text-emerald-400">{globalProgress}%</span>
           </div>
           <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-emerald-500 transition-all duration-500"
+              className="h-full rounded-full bg-emerald-600 dark:bg-emerald-500 transition-all duration-500"
               style={{ width: `${Math.min(100, globalProgress)}%` }}
             />
           </div>
@@ -110,7 +110,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
           </p>
           <button
             onClick={onOpenCreateModal}
-            className="mt-4 px-5 py-2.5 rounded-xl text-xs font-bold bg-violet-600 text-white hover:bg-violet-500 shadow-md transition-all"
+            className="mt-4 px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white shadow-sm transition-all cursor-pointer"
           >
             Crear mi primera meta
           </button>
@@ -130,7 +130,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                 {/* Acento superior de color */}
                 <div 
                   className="absolute top-0 left-0 right-0 h-1.5"
-                  style={{ backgroundColor: goal.color || '#8b5cf6' }}
+                  style={{ backgroundColor: goal.color || '#059669' }}
                 />
 
                 <div>
@@ -188,7 +188,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          isCompleted ? 'bg-emerald-500' : 'bg-violet-600'
+                          isCompleted ? 'bg-emerald-500' : 'bg-emerald-700 dark:bg-emerald-600'
                         }`}
                         style={{ width: `${progress}%` }}
                       />
@@ -217,9 +217,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
 
                   {/* CÁLCULO DE CUÁNTO DEBE AHORRAR POR SEMANA O POR MES */}
                   {!isCompleted && (
-                    <div className="mt-4 p-3 rounded-2xl bg-violet-50/70 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-900/40 space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-violet-900 dark:text-violet-300">
-                        <Clock className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+                    <div className="mt-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                        <Clock className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
                         <span>Plan de Ahorro Sugerido:</span>
                       </div>
                       
@@ -229,9 +229,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                         </p>
                       ) : (
                         <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                          <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-violet-100 dark:border-violet-950">
+                          <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
                             <span className="text-[10px] text-slate-400 block">Por semana:</span>
-                            <strong className="font-mono text-violet-700 dark:text-violet-300 font-bold">
+                            <strong className="font-mono text-slate-900 dark:text-slate-100 font-bold">
                               {formatCOP(rates.weeklyAmount)}
                             </strong>
                             <span className="text-[10px] text-slate-400 block mt-0.5">
@@ -239,9 +239,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                             </span>
                           </div>
 
-                          <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-violet-100 dark:border-violet-950">
+                          <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
                             <span className="text-[10px] text-slate-400 block">Por mes:</span>
-                            <strong className="font-mono text-emerald-700 dark:text-emerald-300 font-bold">
+                            <strong className="font-mono text-emerald-700 dark:text-emerald-400 font-bold">
                               {formatCOP(rates.monthlyAmount)}
                             </strong>
                             <span className="text-[10px] text-slate-400 block mt-0.5">

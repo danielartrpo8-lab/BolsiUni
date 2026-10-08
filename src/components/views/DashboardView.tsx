@@ -2,12 +2,15 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * Vista de Dashboard / Inicio
- * Tarjetas de métricas, gráfico de dona por categoría, evolución de gastos,
- * alerta visual de presupuesto > 80%, y accesos rápidos.
+ * Vista de Dashboard / Inicio - EduPlata
+ * Estilo sobrio, elegante y profesional.
+ * - Saludo personalizado: "Hola [Nombre], vamos a organizar esa plata"
+ * - Acceso a exportar datos en PDF o Excel
+ * - Explicación clara de que la IA se conecta a los datos registrados del usuario
+ * - Modificación de saldo, presupuesto, ingresos y gastos
  */
 
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -19,7 +22,14 @@ import {
   Calendar,
   PieChart as PieIcon,
   BarChart3,
-  Target
+  Target,
+  Edit3,
+  FileText,
+  FileSpreadsheet,
+  Check,
+  User,
+  SlidersHorizontal,
+  Bot
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -33,7 +43,7 @@ import {
   YAxis, 
   CartesianGrid 
 } from 'recharts';
-import { ActiveTab, BudgetConfig, SavingsGoal, Transaction } from '../../types';
+import { ActiveTab, BudgetConfig, MovementType, SavingsGoal, Transaction, UserProfile } from '../../types';
 import { formatCOP, formatDate } from '../../utils/formatters';
 import { getCategoryInfo } from '../../utils/categories';
 
@@ -41,21 +51,56 @@ interface DashboardViewProps {
   transactions: Transaction[];
   budget: BudgetConfig;
   goals: SavingsGoal[];
-  onOpenAddModal: () => void;
+  userProfile: UserProfile;
+  onUpdateUserName?: (name: string) => void;
+  onUpdateProfile?: (profile: Partial<UserProfile>) => void;
+  onOpenAddModal: (defaultType?: MovementType) => void;
   onEditTransaction: (t: Transaction) => void;
   onNavigateTab: (tab: ActiveTab) => void;
   hasApiKey: boolean;
+  onOpenBalanceAdjustment: () => void;
+  onOpenBudgetModal: () => void;
+  onLoadSampleData: () => void;
+  onResetToZeros: () => void;
+  isShowingSampleData: boolean;
+  onExportPDF: () => void;
+  onExportExcel: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   transactions,
   budget,
   goals,
+  userProfile,
+  onUpdateUserName,
+  onUpdateProfile,
   onOpenAddModal,
   onEditTransaction,
   onNavigateTab,
-  hasApiKey
+  hasApiKey,
+  onOpenBalanceAdjustment,
+  onOpenBudgetModal,
+  onLoadSampleData,
+  onResetToZeros,
+  isShowingSampleData,
+  onExportPDF,
+  onExportExcel
 }) => {
+  // Estado para editar el perfil (nombre y universidad)
+  const [isEditingProfile, setIsEditingProfile] = useState(!userProfile.name || !userProfile.university);
+  const [nameInput, setNameInput] = useState(userProfile.name || '');
+  const [universityInput, setUniversityInput] = useState(userProfile.university || '');
+
+  React.useEffect(() => {
+    setNameInput(userProfile.name || '');
+    setUniversityInput(userProfile.university || '');
+    if (userProfile.name && userProfile.university) {
+      setIsEditingProfile(false);
+    } else {
+      setIsEditingProfile(true);
+    }
+  }, [userProfile.name, userProfile.university]);
+
   // Cálculos principales
   const { totalIncome, totalExpense, balance, budgetSpentPct, isOver80, isOver100 } = useMemo(() => {
     const inc = transactions
@@ -114,7 +159,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     });
 
     const sortedDates = Object.keys(dayMap).sort();
-    // Tomar los últimos 7 registros con actividad
     return sortedDates.slice(-7).map((d) => {
       const parts = d.split('-');
       const label = parts.length === 3 ? `${parts[2]}/${parts[1]}` : d;
@@ -133,38 +177,290 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .slice(0, 5);
   }, [transactions]);
 
+  const isEmpty = transactions.length === 0;
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = nameInput.trim();
+    const cleanUni = universityInput.trim();
+    if (cleanName) {
+      if (onUpdateProfile) {
+        onUpdateProfile({ name: cleanName, university: cleanUni });
+      } else if (onUpdateUserName) {
+        onUpdateUserName(cleanName);
+      }
+      setIsEditingProfile(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
+      {/* 1. SALUDO PERSONALIZADO: "Hola [Nombre], vamos a organizar esa plata" */}
+      <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1 w-full md:w-auto">
+          {isEditingProfile ? (
+            <form onSubmit={handleSaveProfile} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                  👋 ¡Hola! Vamos a registrar tus datos para tus informes y consejos:
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5">
+                <div className="flex-1">
+                  <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
+                    Tu Nombre *
+                  </label>
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    placeholder="Ej: Daniel"
+                    required
+                    className="w-full px-3 py-1.5 text-sm font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
+                    Tu Universidad *
+                  </label>
+                  <input
+                    type="text"
+                    value={universityInput}
+                    onChange={(e) => setUniversityInput(e.target.value)}
+                    placeholder="Ej: Universidad de Antioquia, etc."
+                    className="w-full px-3 py-1.5 text-sm font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-xs font-bold transition-colors cursor-pointer shadow-xs shrink-0"
+                  >
+                    Guardar Datos
+                  </button>
+                  {userProfile.name && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNameInput(userProfile.name || '');
+                        setUniversityInput(userProfile.university || '');
+                        setIsEditingProfile(false);
+                      }}
+                      className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 transition-colors shrink-0"
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  Hola <span className="text-slate-900 dark:text-slate-100 underline decoration-slate-400 dark:decoration-slate-600 underline-offset-4">{userProfile.name}</span>, vamos a organizar esa plata
+                </h2>
+                <button
+                  onClick={() => {
+                    setNameInput(userProfile.name || '');
+                    setUniversityInput(userProfile.university || '');
+                    setIsEditingProfile(true);
+                  }}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Editar nombre y universidad"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                {userProfile.university ? (
+                  <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                    🏛️ {userProfile.university}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setIsEditingProfile(true)}
+                    className="text-xs text-emerald-700 dark:text-emerald-400 underline font-medium cursor-pointer"
+                  >
+                    + Agregar mi universidad
+                  </button>
+                )}
+                <span>• Controla tu presupuesto, evita quedarte corto y toma decisiones inteligentes con tu plata.</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Acciones Rápidas del Saludo */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => onOpenAddModal('expense')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Nuevo Movimiento</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. TARJETA INFORMATIVA: DESCARGAR EN PDF O EXCEL */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 shrink-0">
+            <FileSpreadsheet className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
+              Tus finanzas siempre disponibles: Descarga en PDF o Excel
+            </h4>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs">
+              Puedes descargar un informe visual en PDF o exportar tus movimientos organizados a una hoja de cálculo en Excel (.CSV).
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          <button
+            onClick={onExportPDF}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <FileText className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+            <span>Descargar PDF</span>
+          </button>
+          <button
+            onClick={onExportExcel}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
+            <span>Descargar Excel</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. BANNER: IA CONECTADA DIRECTAMENTE A LOS DATOS REGISTRADOS */}
+      <div className="p-5 rounded-3xl bg-slate-900 dark:bg-slate-950 text-white border border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400 shrink-0">
+            <Bot className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/10 text-[11px] font-bold text-amber-300 mb-1 border border-white/10">
+              <Sparkles className="w-3 h-3" />
+              <span>EduPlata IA • Conectada a tus números reales</span>
+            </div>
+            <h3 className="font-bold text-sm sm:text-base text-white">
+              Consejos personalizados basados en tus movimientos
+            </h3>
+            <p className="text-xs text-slate-300 mt-0.5 leading-relaxed max-w-2xl">
+              Al consultar la IA o solicitar tu diagnóstico, el asistente revisa directamente tus ingresos, gastos, categorías y saldo registrado para decirte con precisión dónde puedes recortar y cómo estás llevando tus finanzas.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => onNavigateTab('ai')}
+          className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs sm:text-sm shrink-0 self-start md:self-auto transition-colors shadow-xs cursor-pointer"
+        >
+          Consultar Asistente IA
+        </button>
+      </div>
+
+      {/* AVISO SI HAY DATOS DE EJEMPLO CARGADOS */}
+      {isShowingSampleData && (
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">ℹ️</span>
+            <div>
+              <p className="text-xs sm:text-sm font-bold">
+                Estás viendo datos de muestra para pruebas.
+              </p>
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                ¿Deseas vaciar todo y registrar tu dinero real en ceros ($0)?
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onResetToZeros}
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-700 hover:bg-amber-800 text-white shrink-0 self-start sm:self-center transition-colors cursor-pointer shadow-xs"
+          >
+            🧹 Empezar en ceros ($0)
+          </button>
+        </div>
+      )}
+
+      {/* BIENVENIDA EN CEROS */}
+      {isEmpty && (
+        <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="space-y-1">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              Comienza a organizar tu plata
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Elige una acción para dar el primer paso con tus cuentas:
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            <button
+              onClick={onOpenBalanceAdjustment}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <Wallet className="w-4 h-4" />
+              <span>1. Definir Saldo Inicial</span>
+            </button>
+
+            <button
+              onClick={onOpenBudgetModal}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>2. Fijar Presupuesto del Mes</span>
+            </button>
+
+            <button
+              onClick={() => onOpenAddModal('expense')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>3. Registrar Movimiento</span>
+            </button>
+
+            <button
+              onClick={onLoadSampleData}
+              className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline ml-2 transition-colors cursor-pointer"
+            >
+              Cargar datos de ejemplo para explorar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ALERTA VISUAL DE PRESUPUESTO > 80% */}
-      {isOver80 && (
+      {isOver80 && budget.monthlyExpenseLimit > 0 && (
         <div className={`p-4 sm:p-5 rounded-2xl border flex items-start gap-3.5 shadow-sm ${
           isOver100 
             ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200' 
             : 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200'
         }`}>
-          <div className={`p-2 rounded-xl shrink-0 ${isOver100 ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white'}`}>
+          <div className={`p-2 rounded-xl shrink-0 ${isOver100 ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'}`}>
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div className="flex-1">
             <h4 className="font-extrabold text-sm sm:text-base">
               {isOver100 
-                ? `🚨 ¡Superaste tu presupuesto! (${budgetSpentPct}% gastado)` 
-                : `⚠️ ¡Ojo al bolsillo! Has gastado el ${budgetSpentPct}% de tu presupuesto`}
+                ? `¡Superaste tu presupuesto! (${budgetSpentPct}% gastado)` 
+                : `¡Precaución! Has gastado el ${budgetSpentPct}% de tu presupuesto`}
             </h4>
             <p className="text-xs sm:text-sm mt-0.5 opacity-90">
               {isOver100
-                ? `Llevas ${formatCOP(totalExpense)} gastados de tu límite de ${formatCOP(budget.monthlyExpenseLimit)}. Es momento de congelar salidas y gastos no esenciales.`
-                : `Te quedan ${formatCOP(Math.max(0, budget.monthlyExpenseLimit - totalExpense))} para lo que resta del mes. Modera las polas y comidas fuera de casa para no colapsar.`}
+                ? `Llevas ${formatCOP(totalExpense)} gastados de tu límite de ${formatCOP(budget.monthlyExpenseLimit)}.`
+                : `Te quedan ${formatCOP(Math.max(0, budget.monthlyExpenseLimit - totalExpense))} disponibles este mes.`}
             </p>
           </div>
           <button
-            onClick={() => onNavigateTab('budget')}
-            className={`text-xs px-3 py-1.5 rounded-xl font-bold shrink-0 self-center transition-all ${
-              isOver100
-                ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                : 'bg-amber-600 hover:bg-amber-700 text-white'
-            }`}
+            onClick={onOpenBudgetModal}
+            className="text-xs px-3 py-1.5 rounded-xl font-bold bg-slate-900 hover:bg-slate-800 text-white shrink-0 self-center transition-all cursor-pointer shadow-xs"
           >
             Ajustar
           </button>
@@ -175,157 +471,203 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Saldo Actual */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Saldo en Bolsillo
             </span>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${balance >= 0 ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400'}`}>
-              <Wallet className="w-5 h-5" />
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={onOpenBalanceAdjustment}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Modificar saldo"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                <Wallet className="w-4 h-4" />
+              </div>
             </div>
           </div>
+
           <div className="mt-3">
-            <span className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${balance >= 0 ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
+            <span className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${balance >= 0 ? 'text-slate-900 dark:text-white' : 'text-rose-700 dark:text-rose-400'}`}>
               {formatCOP(balance)}
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Disponible para terminar el mes
-          </p>
-          <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
+
+          <div className="mt-1 flex items-center justify-between text-xs">
+            <span className="text-slate-500 dark:text-slate-400">
+              Disponible ahora
+            </span>
+            <button
+              onClick={onOpenBalanceAdjustment}
+              className="text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:underline cursor-pointer"
+            >
+              Modificar
+            </button>
+          </div>
         </div>
 
         {/* Total Ingresos */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Ingresos del Mes
             </span>
-            <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-600 dark:bg-teal-950 dark:text-teal-400 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5" />
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onOpenAddModal('income')}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition-colors cursor-pointer"
+                title="Agregar nuevo ingreso"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-emerald-700 dark:text-emerald-400">
+                <TrendingUp className="w-4 h-4" />
+              </div>
             </div>
           </div>
+
           <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tracking-tight">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-700 dark:text-emerald-400 tracking-tight">
               +{formatCOP(totalIncome)}
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Mesada, auxilios y trabajos
-          </p>
+
+          <div className="mt-1 flex items-center justify-between text-xs">
+            <span className="text-slate-500 dark:text-slate-400">
+              Mesada y auxilios
+            </span>
+            <button
+              onClick={() => onOpenAddModal('income')}
+              className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+            >
+              + Ingreso
+            </button>
+          </div>
         </div>
 
         {/* Total Gastos */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Gastos del Mes
             </span>
-            <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400 flex items-center justify-center">
-              <TrendingDown className="w-5 h-5" />
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onOpenAddModal('expense')}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors cursor-pointer"
+                title="Agregar nuevo gasto"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-rose-700 dark:text-rose-400">
+                <TrendingDown className="w-4 h-4" />
+              </div>
             </div>
           </div>
+
           <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-rose-600 dark:text-rose-400 tracking-tight">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono text-rose-700 dark:text-rose-400 tracking-tight">
               -{formatCOP(totalExpense)}
             </span>
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <span>{budgetSpentPct}% del presupuesto</span>
+
+          <div className="mt-1 flex items-center justify-between text-xs">
+            <span className="text-slate-500 dark:text-slate-400">
+              {budget.monthlyExpenseLimit > 0 ? `${budgetSpentPct}% del límite` : 'Sin límite'}
+            </span>
+            <button
+              onClick={() => onOpenAddModal('expense')}
+              className="text-[11px] font-bold text-rose-700 dark:text-rose-400 hover:underline cursor-pointer"
+            >
+              + Gasto
+            </button>
           </div>
         </div>
 
-        {/* Presupuesto Total Restante */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        {/* Presupuesto Total */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Límite Mensual
             </span>
-            <div className="w-9 h-9 rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-400 flex items-center justify-center">
-              <BarChart3 className="w-5 h-5" />
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={onOpenBudgetModal}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Configurar presupuesto"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                <BarChart3 className="w-4 h-4" />
+              </div>
             </div>
           </div>
+
           <div className="mt-3">
             <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-white tracking-tight">
               {formatCOP(budget.monthlyExpenseLimit)}
             </span>
           </div>
-          {/* Barra de progreso rápida */}
+
+          {/* Barra de progreso sobria */}
           <div className="mt-2 w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
             <div 
               className={`h-full rounded-full transition-all duration-500 ${
-                budgetSpentPct > 90 ? 'bg-rose-500' : budgetSpentPct > 70 ? 'bg-amber-500' : 'bg-emerald-500'
+                budgetSpentPct > 90 ? 'bg-rose-700' : budgetSpentPct > 70 ? 'bg-amber-600' : 'bg-emerald-700'
               }`}
               style={{ width: `${Math.min(100, budgetSpentPct)}%` }}
             />
           </div>
+
+          <div className="mt-1 flex items-center justify-between text-xs">
+            <span className="text-slate-500 dark:text-slate-400">
+              {budget.monthlyExpenseLimit > 0 ? `${formatCOP(Math.max(0, budget.monthlyExpenseLimit - totalExpense))} libre` : 'Fija tu límite'}
+            </span>
+            <button
+              onClick={onOpenBudgetModal}
+              className="text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:underline cursor-pointer"
+            >
+              Ajustar
+            </button>
+          </div>
         </div>
 
       </div>
 
-      {/* ACCIONES RÁPIDAS Y BANNER IA */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-violet-700 rounded-3xl text-white shadow-lg shadow-emerald-700/15">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
-            <Sparkles className="w-6 h-6 text-amber-300" />
-          </div>
-          <div>
-            <h3 className="font-bold text-base sm:text-lg leading-tight">
-              ¿En qué se te está yendo la plata?
-            </h3>
-            <p className="text-xs sm:text-sm text-emerald-100">
-              Analiza tus gastos con Gemini y descubre qué recortar para llegar al fin de semestre
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => onNavigateTab('ai')}
-            className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-white text-emerald-800 font-bold text-xs sm:text-sm hover:bg-emerald-50 transition-colors shadow-sm"
-          >
-            Consultar Asistente IA
-          </button>
-          <button
-            onClick={onOpenAddModal}
-            className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Movimiento</span>
-          </button>
-        </div>
-      </div>
-
-      {/* SECCIÓN DE GRÁFICOS: DONA + BARRAS */}
+      {/* SECCIÓN DE GRÁFICOS: DONA + BARRAS (COLORES SOBRIOS) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Gráfico 1: Gastos por Categoría (Dona) */}
-        <div className="lg:col-span-6 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col">
+        {/* Gráfico 1: Gastos por Categoría */}
+        <div className="lg:col-span-6 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <PieIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <PieIcon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
               <h3 className="font-bold text-base text-slate-900 dark:text-white">
                 Gastos por Categoría
               </h3>
             </div>
-            <span className="text-xs font-semibold text-slate-400">
+            <span className="text-xs font-semibold text-slate-500">
               Total: {formatCOP(totalExpense)}
             </span>
           </div>
 
           {categoryData.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-12 text-slate-400 text-center">
-              <span className="text-4xl mb-2">📊</span>
+              <span className="text-3xl mb-2">📊</span>
               <p className="text-sm font-medium">Aún no hay gastos registrados este mes</p>
               <button
-                onClick={onOpenAddModal}
-                className="mt-3 text-xs text-emerald-600 dark:text-emerald-400 font-bold underline"
+                onClick={() => onOpenAddModal('expense')}
+                className="mt-3 text-xs text-slate-700 dark:text-slate-300 font-bold underline cursor-pointer"
               >
                 Registrar primer gasto
               </button>
             </div>
           ) : (
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 items-center gap-4">
-              {/* Gráfico Recharts */}
               <div className="sm:col-span-7 h-52 sm:h-60 relative flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -337,7 +679,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       cy="50%"
                       innerRadius={55}
                       outerRadius={80}
-                      paddingAngle={4}
+                      paddingAngle={3}
                     >
                       {categoryData.map((entry) => (
                         <Cell key={`cell-${entry.id}`} fill={entry.color} />
@@ -346,7 +688,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <Tooltip
                       formatter={(value: any) => [formatCOP(Number(value)), 'Gasto']}
                       contentStyle={{
-                        borderRadius: '16px',
+                        borderRadius: '12px',
                         backgroundColor: '#0f172a',
                         border: 'none',
                         color: '#fff',
@@ -355,7 +697,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     />
                   </PieChart>
                 </ResponsiveContainer>
-                {/* Texto central de la dona */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-[11px] text-slate-400 uppercase font-semibold">Gastado</span>
                   <span className="text-sm font-extrabold font-mono text-slate-900 dark:text-white">
@@ -364,14 +705,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               </div>
 
-              {/* Leyenda con badges */}
-              <div className="sm:col-span-5 space-y-2 max-h-56 overflow-y-auto pr-1">
+              {/* Leyenda sobria */}
+              <div className="sm:col-span-5 space-y-1.5 max-h-56 overflow-y-auto pr-1">
                 {categoryData.map((item) => {
                   const pct = totalExpense > 0 ? Math.round((item.value / totalExpense) * 100) : 0;
                   return (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between text-xs p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                      className="flex items-center justify-between text-xs p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                     >
                       <div className="flex items-center gap-2 truncate">
                         <span
@@ -393,21 +734,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           )}
         </div>
 
-        {/* Gráfico 2: Evolución de Gastos (Barras por Día) */}
-        <div className="lg:col-span-6 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col">
+        {/* Gráfico 2: Evolución de Gastos */}
+        <div className="lg:col-span-6 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <BarChart3 className="w-5 h-5 text-slate-700 dark:text-slate-300" />
               <h3 className="font-bold text-base text-slate-900 dark:text-white">
                 Evolución de Gastos
               </h3>
             </div>
-            <span className="text-xs text-slate-400">Últimos días con actividad</span>
+            <span className="text-xs text-slate-400">Días con actividad</span>
           </div>
 
           {evolutionData.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-12 text-slate-400 text-center">
-              <span className="text-4xl mb-2">📈</span>
+              <span className="text-3xl mb-2">📈</span>
               <p className="text-sm font-medium">No hay suficiente historial para mostrar la tendencia</p>
             </div>
           ) : (
@@ -417,12 +758,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                   <XAxis 
                     dataKey="date" 
-                    tick={{ fontSize: 11, fill: '#94a3b8' }} 
+                    tick={{ fontSize: 11, fill: '#64748b' }} 
                     axisLine={false} 
                     tickLine={false} 
                   />
                   <YAxis 
-                    tick={{ fontSize: 10, fill: '#94a3b8' }} 
+                    tick={{ fontSize: 10, fill: '#64748b' }} 
                     axisLine={false} 
                     tickLine={false}
                     tickFormatter={(val) => `$${Math.round(val / 1000)}k`}
@@ -431,7 +772,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     formatter={(value: any) => [formatCOP(Number(value)), 'Gasto del día']}
                     labelFormatter={(label) => `Fecha: ${label}`}
                     contentStyle={{
-                      borderRadius: '16px',
+                      borderRadius: '12px',
                       backgroundColor: '#0f172a',
                       border: 'none',
                       color: '#fff',
@@ -440,8 +781,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   />
                   <Bar 
                     dataKey="gasto" 
-                    fill="#8b5cf6" 
-                    radius={[8, 8, 0, 0]} 
+                    fill="#334155" 
+                    radius={[6, 6, 0, 0]} 
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -451,26 +792,51 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       </div>
 
-      {/* SECCIÓN INFERIOR: MOVIMIENTOS RECIENTES + METAS DE AHORRO */}
+      {/* SECCIÓN INFERIOR: ÚLTIMOS MOVIMIENTOS + METAS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Lista de últimos movimientos */}
-        <div className="lg:col-span-7 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div className="lg:col-span-7 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-base text-slate-900 dark:text-white">
               Últimos Movimientos
             </h3>
-            <button
-              onClick={() => onNavigateTab('transactions')}
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
-            >
-              <span>Ver todos ({transactions.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => onOpenAddModal('expense')}
+                className="text-xs font-bold text-slate-800 dark:text-slate-200 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Agregar</span>
+              </button>
+              <button
+                onClick={() => onNavigateTab('transactions')}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
+              >
+                <span>Ver todos ({transactions.length})</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {recentTransactions.length === 0 ? (
-            <p className="text-xs text-slate-400 py-6 text-center">No hay movimientos recientes.</p>
+            <div className="py-8 text-center text-slate-400 space-y-2">
+              <p className="text-xs">No hay movimientos registrados todavía.</p>
+              <div className="flex justify-center gap-2">
+                <button
+                  onClick={() => onOpenAddModal('income')}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 cursor-pointer"
+                >
+                  + Agregar Ingreso
+                </button>
+                <button
+                  onClick={() => onOpenAddModal('expense')}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 cursor-pointer"
+                >
+                  + Agregar Gasto
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="space-y-2.5">
               {recentTransactions.map((t) => {
@@ -480,10 +846,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div
                     key={t.id}
                     onClick={() => onEditTransaction(t)}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-700/80 shadow-xs flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-700 shadow-2xs flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
                         {info.emoji}
                       </div>
                       <div className="min-w-0">
@@ -496,7 +862,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </div>
                     </div>
                     <div className="text-right shrink-0 ml-3">
-                      <span className={`text-xs sm:text-sm font-bold font-mono ${isInc ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                      <span className={`text-xs sm:text-sm font-bold font-mono ${isInc ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-900 dark:text-slate-100'}`}>
                         {isInc ? '+' : '-'}{formatCOP(t.amount)}
                       </span>
                     </div>
@@ -508,18 +874,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Resumen de Metas de Ahorro */}
-        <div className="lg:col-span-5 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                <Target className="w-5 h-5 text-slate-700 dark:text-slate-300" />
                 <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                  Tus Metas Universitarias
+                  Tus Metas de Ahorro
                 </h3>
               </div>
               <button
                 onClick={() => onNavigateTab('goals')}
-                className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-slate-700 dark:text-slate-300 hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <span>Ver metas</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -531,13 +897,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <p className="text-xs">No te has fijado metas de ahorro aún.</p>
                 <button
                   onClick={() => onNavigateTab('goals')}
-                  className="mt-2 text-xs text-violet-600 dark:text-violet-400 font-bold underline"
+                  className="mt-2 text-xs text-slate-800 dark:text-slate-200 font-bold underline cursor-pointer"
                 >
                   Crear mi primera meta
                 </button>
               </div>
             ) : (
-              <div className="space-y-3.5">
+              <div className="space-y-3">
                 {goals.slice(0, 3).map((goal) => {
                   const pct = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
                   return (
@@ -547,13 +913,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           <span>{goal.emoji}</span>
                           <span className="truncate">{goal.title}</span>
                         </span>
-                        <span className="font-mono font-bold text-violet-600 dark:text-violet-400 shrink-0 ml-2">
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200 shrink-0 ml-2">
                           {pct}%
                         </span>
                       </div>
                       <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-violet-600 dark:bg-violet-500 transition-all duration-500"
+                          className="h-full rounded-full bg-slate-800 dark:bg-slate-300 transition-all duration-500"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -574,7 +940,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
             <button
               onClick={() => onNavigateTab('goals')}
-              className="text-violet-600 dark:text-violet-400 font-bold hover:underline"
+              className="text-slate-800 dark:text-slate-200 font-bold hover:underline cursor-pointer"
             >
               + Aportar o crear
             </button>
