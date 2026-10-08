@@ -25,16 +25,19 @@ import {
   AIAnalysisResult, 
   BudgetConfig, 
   SavingsGoal, 
+  SemesterConfig,
   Transaction, 
   UserProfile 
 } from './types';
 import { 
   INITIAL_BUDGET, 
   INITIAL_SAVINGS_GOALS, 
+  INITIAL_SEMESTER_CONFIG,
   INITIAL_TRANSACTIONS, 
   INITIAL_USER_PROFILE,
   SAMPLE_BUDGET,
   SAMPLE_SAVINGS_GOALS,
+  SAMPLE_SEMESTER_CONFIG,
   SAMPLE_TRANSACTIONS,
   SAMPLE_USER_PROFILE
 } from './data/initialData';
@@ -49,7 +52,8 @@ const STORAGE_KEYS = {
   GOALS: 'bolsiuni_v2_goals',
   PROFILE: 'bolsiuni_v2_profile',
   AI_ANALYSIS: 'bolsiuni_v2_ai_analysis',
-  DARK_MODE: 'bolsiuni_dark_mode'
+  DARK_MODE: 'bolsiuni_dark_mode',
+  SEMESTER: 'bolsiuni_v2_semester'
 };
 
 export default function App() {
@@ -156,6 +160,25 @@ export default function App() {
       console.error(e);
     }
   }, [userProfile]);
+
+  // Plan del semestre y proyección
+  const [semesterConfig, setSemesterConfig] = useState<SemesterConfig>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SEMESTER);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return INITIAL_SEMESTER_CONFIG;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SEMESTER, JSON.stringify(semesterConfig));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [semesterConfig]);
 
   // Último análisis de IA
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(() => {
@@ -319,6 +342,7 @@ export default function App() {
     setBudget(SAMPLE_BUDGET);
     setGoals(SAMPLE_SAVINGS_GOALS);
     setUserProfile(SAMPLE_USER_PROFILE);
+    setSemesterConfig(SAMPLE_SEMESTER_CONFIG);
     setAiAnalysis(null);
   };
 
@@ -340,6 +364,7 @@ export default function App() {
         otros: 0
       }
     });
+    setSemesterConfig(INITIAL_SEMESTER_CONFIG);
     setAiAnalysis(null);
   };
 
@@ -349,6 +374,7 @@ export default function App() {
     if (data.budget) setBudget(data.budget);
     if (data.goals) setGoals(data.goals);
     if (data.userProfile) setUserProfile(data.userProfile);
+    if (data.semester) setSemesterConfig(data.semester);
     if (data.aiAnalysis) setAiAnalysis(data.aiAnalysis);
   };
 
@@ -382,6 +408,7 @@ export default function App() {
             budget={budget}
             goals={goals}
             userProfile={userProfile}
+            semesterConfig={semesterConfig}
             onUpdateUserName={(name) => setUserProfile((prev) => ({ ...prev, name }))}
             onUpdateProfile={(partial) => setUserProfile((prev) => ({ ...prev, ...partial }))}
             onOpenAddModal={(defaultType) => {
@@ -466,13 +493,16 @@ export default function App() {
             onApiKeyChange={(k) => setApiKey(k)}
             userProfile={userProfile}
             onUpdateProfile={(p) => setUserProfile(p)}
+            semesterConfig={semesterConfig}
+            onUpdateSemesterConfig={(c) => setSemesterConfig(c)}
             onResetSampleData={handleResetSampleData}
             onClearAllData={handleClearAllData}
             allData={{
               transactions,
               budget,
               goals,
-              userProfile
+              userProfile,
+              semester: semesterConfig
             }}
             onImportData={handleImportData}
           />

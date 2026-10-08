@@ -6,7 +6,51 @@
  * Contextualizados para un estudiante universitario en Colombia
  */
 
-import { BudgetConfig, SavingsGoal, Transaction, UserProfile } from '../types';
+import { BudgetConfig, SavingsGoal, Transaction, UserProfile, SemesterConfig } from '../types';
+
+// Helper para calcular fechas relativas
+const addDaysToToday = (days: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+export const INITIAL_SEMESTER_CONFIG: SemesterConfig = {
+  startDate: addDaysToToday(-45),
+  endDate: addDaysToToday(65),
+  incomeFrequency: 'mensual',
+  incomeDay: 15,
+  incomeDaySecond: 30,
+  events: [
+    {
+      id: 'event-parciales-init',
+      title: 'Semana de Parciales',
+      type: 'parciales',
+      date: addDaysToToday(6)
+    },
+    {
+      id: 'event-finales-init',
+      title: 'Exámenes Finales',
+      type: 'finales',
+      date: addDaysToToday(45)
+    },
+    {
+      id: 'event-matricula-init',
+      title: 'Pago de Matrícula',
+      type: 'matricula',
+      date: addDaysToToday(55)
+    },
+    {
+      id: 'event-vacaciones-init',
+      title: 'Inicio de Vacaciones',
+      type: 'vacaciones',
+      date: addDaysToToday(65)
+    }
+  ]
+};
 
 // Estado inicial: la app arranca en ceros para que cada estudiante ingrese sus datos
 export const INITIAL_USER_PROFILE: UserProfile = {
@@ -56,6 +100,40 @@ export const SAMPLE_BUDGET: BudgetConfig = {
     matricula: 0,
     otros: 65000
   }
+};
+
+export const SAMPLE_SEMESTER_CONFIG: SemesterConfig = {
+  startDate: addDaysToToday(-45),
+  endDate: addDaysToToday(65),
+  incomeFrequency: 'mensual',
+  incomeDay: 15,
+  incomeDaySecond: 30,
+  events: [
+    {
+      id: 'event-parciales-sample',
+      title: 'Segundos Parciales',
+      type: 'parciales',
+      date: addDaysToToday(6)
+    },
+    {
+      id: 'event-finales-sample',
+      title: 'Exámenes Finales',
+      type: 'finales',
+      date: addDaysToToday(45)
+    },
+    {
+      id: 'event-matricula-sample',
+      title: 'Pago de Matrícula Próximo Semestre',
+      type: 'matricula',
+      date: addDaysToToday(55)
+    },
+    {
+      id: 'event-vacaciones-sample',
+      title: 'Vacaciones de Fin de Semestre',
+      type: 'vacaciones',
+      date: addDaysToToday(65)
+    }
+  ]
 };
 
 // Generamos fechas relativas a hoy para que siempre luzca fresco y actual

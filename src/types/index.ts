@@ -99,4 +99,24 @@ export interface UserProfile {
   semester: string;
 }
 
+export type IncomeFrequency = 'semanal' | 'quincenal' | 'mensual';
+
+export type AcademicEventType = 'parciales' | 'finales' | 'matricula' | 'vacaciones' | 'otro';
+
+export interface AcademicEvent {
+  id: string;
+  title: string;
+  type: AcademicEventType;
+  date: string; // Formato YYYY-MM-DD
+}
+
+export interface SemesterConfig {
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  incomeFrequency: IncomeFrequency;
+  incomeDay: number; // Día del mes (1-31) o día de semana (1=Lunes .. 7=Domingo)
+  incomeDaySecond?: number; // Segundo día para quincenas (ej. 30)
+  events: AcademicEvent[];
+}
+
 export type ActiveTab = 'dashboard' | 'transactions' | 'budget' | 'goals' | 'ai' | 'settings';

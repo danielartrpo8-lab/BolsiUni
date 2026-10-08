@@ -10,7 +10,7 @@
  * - Perfil de estudiante universitario.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Key, 
   ExternalLink, 
@@ -26,9 +26,22 @@ import {
   Sparkles,
   Info,
   Building,
-  GraduationCap
+  GraduationCap,
+  Calendar,
+  Hourglass,
+  Plus,
+  Coins
 } from 'lucide-react';
-import { BudgetConfig, SavingsGoal, Transaction, UserProfile } from '../../types';
+import { 
+  AcademicEvent, 
+  AcademicEventType, 
+  BudgetConfig, 
+  IncomeFrequency, 
+  SavingsGoal, 
+  SemesterConfig, 
+  Transaction, 
+  UserProfile 
+} from '../../types';
 import { saveStoredApiKey, removeStoredApiKey, testApiKey } from '../../services/gemini';
 
 interface SettingsViewProps {
@@ -36,6 +49,8 @@ interface SettingsViewProps {
   onApiKeyChange: (newKey: string) => void;
   userProfile: UserProfile;
   onUpdateProfile: (profile: UserProfile) => void;
+  semesterConfig: SemesterConfig;
+  onUpdateSemesterConfig: (config: SemesterConfig) => void;
   onResetSampleData: () => void;
   onClearAllData: () => void;
   allData: {
@@ -43,6 +58,7 @@ interface SettingsViewProps {
     budget: BudgetConfig;
     goals: SavingsGoal[];
     userProfile: UserProfile;
+    semester?: SemesterConfig;
   };
   onImportData: (data: any) => void;
 }
@@ -52,6 +68,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onApiKeyChange,
   userProfile,
   onUpdateProfile,
+  semesterConfig,
+  onUpdateSemesterConfig,
   onResetSampleData,
   onClearAllData,
   allData,
@@ -67,6 +85,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // Perfil form
   const [profileForm, setProfileForm] = useState(userProfile);
   const [profileSaved, setProfileSaved] = useState(false);
+
+  // Semestre y calendario form
+  const [semesterForm, setSemesterForm] = useState<SemesterConfig>(semesterConfig);
+  const [semesterSaved, setSemesterSaved] = useState(false);
+  const [newEventTitle, setNewEventTitle] = useState('');
+  const [newEventType, setNewEventType] = useState<AcademicEventType>('parciales');
+  const [newEventDate, setNewEventDate] = useState('');
+
+  useEffect(() => {
+    setProfileForm(userProfile);
+  }, [userProfile]);
+
+  useEffect(() => {
+    setSemesterForm(semesterConfig);
+  }, [semesterConfig]);
 
   const handleSaveKey = () => {
     saveStoredApiKey(keyInput);
@@ -97,6 +130,41 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onUpdateProfile(profileForm);
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 3000);
+  };
+
+  const handleSaveSemester = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateSemesterConfig(semesterForm);
+    setSemesterSaved(true);
+    setTimeout(() => setSemesterSaved(false), 3000);
+  };
+
+  const handleAddAcademicEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEventTitle.trim() || !newEventDate) return;
+    const newEvt: AcademicEvent = {
+      id: `event-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: newEventTitle.trim(),
+      type: newEventType,
+      date: newEventDate
+    };
+    const updated: SemesterConfig = {
+      ...semesterForm,
+      events: [...(semesterForm.events || []), newEvt]
+    };
+    setSemesterForm(updated);
+    onUpdateSemesterConfig(updated);
+    setNewEventTitle('');
+    setNewEventDate('');
+  };
+
+  const handleRemoveAcademicEvent = (id: string) => {
+    const updated: SemesterConfig = {
+      ...semesterForm,
+      events: (semesterForm.events || []).filter((e) => e.id !== id)
+    };
+    setSemesterForm(updated);
+    onUpdateSemesterConfig(updated);
   };
 
   const handleExportJSON = () => {
@@ -338,7 +406,292 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </form>
       </div>
 
-      {/* SECCIÓN 3: GESTIÓN DE DATOS Y RESPALDO */}
+      {/* SECCIÓN 3: PLAN DEL SEMESTRE Y CALENDARIO DE INGRESOS */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-amber-700 dark:text-amber-400">
+            <Hourglass className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white">
+              Plan del Semestre y Calendario de Ingresos
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Configura tus fechas para la proyección de "¿Hasta cuándo me alcanza?", mesadas y exámenes
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveSemester} className="space-y-6">
+          {/* Subsección A: Fechas del Semestre */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <span>1. Período Académico del Semestre</span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                  Fecha de Inicio del Semestre *
+                </label>
+                <input
+                  type="date"
+                  value={semesterForm.startDate}
+                  onChange={(e) => setSemesterForm({ ...semesterForm, startDate: e.target.value })}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                  Fecha de Fin del Semestre *
+                </label>
+                <input
+                  type="date"
+                  value={semesterForm.endDate}
+                  onChange={(e) => setSemesterForm({ ...semesterForm, endDate: e.target.value })}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Subsección B: Frecuencia y Día de Ingresos */}
+          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Coins className="w-3.5 h-3.5 text-amber-500" />
+              <span>2. Calendario de Mesada / Ingresos</span>
+            </h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                  ¿Cada cuánto te llega plata? *
+                </label>
+                <select
+                  value={semesterForm.incomeFrequency}
+                  onChange={(e) => setSemesterForm({ ...semesterForm, incomeFrequency: e.target.value as IncomeFrequency })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="mensual">Mensual (una vez al mes)</option>
+                  <option value="quincenal">Quincenal (dos veces al mes)</option>
+                  <option value="semanal">Semanal (cada semana)</option>
+                </select>
+              </div>
+
+              {/* Si es Mensual */}
+              {semesterForm.incomeFrequency === 'mensual' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                    ¿Qué día del mes te consignan? * (1 al 31)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={semesterForm.incomeDay || 15}
+                    onChange={(e) => setSemesterForm({ ...semesterForm, incomeDay: parseInt(e.target.value, 10) || 1 })}
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Ej: Si pones 15, tu mesada llega el 15 de cada mes.
+                  </p>
+                </div>
+              )}
+
+              {/* Si es Quincenal */}
+              {semesterForm.incomeFrequency === 'quincenal' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                      1er Pago (Día)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={semesterForm.incomeDay || 15}
+                      onChange={(e) => setSemesterForm({ ...semesterForm, incomeDay: parseInt(e.target.value, 10) || 1 })}
+                      required
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                      2do Pago (Día)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={semesterForm.incomeDaySecond || 30}
+                      onChange={(e) => setSemesterForm({ ...semesterForm, incomeDaySecond: parseInt(e.target.value, 10) || 30 })}
+                      required
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Si es Semanal */}
+              {semesterForm.incomeFrequency === 'semanal' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                    ¿Qué día de la semana te llega plata? *
+                  </label>
+                  <select
+                    value={semesterForm.incomeDay || 5}
+                    onChange={(e) => setSemesterForm({ ...semesterForm, incomeDay: parseInt(e.target.value, 10) || 1 })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="1">Lunes</option>
+                    <option value="2">Martes</option>
+                    <option value="3">Miércoles</option>
+                    <option value="4">Jueves</option>
+                    <option value="5">Viernes</option>
+                    <option value="6">Sábado</option>
+                    <option value="7">Domingo</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Subsección C: Fechas Importantes */}
+          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                <span>3. Fechas Importantes del Semestre</span>
+              </h4>
+              <span className="text-xs text-slate-500">
+                Parciales, Finales, Matrícula, Vacaciones
+              </span>
+            </div>
+
+            {/* Lista de eventos registrados */}
+            <div className="space-y-2">
+              {(!semesterForm.events || semesterForm.events.length === 0) ? (
+                <p className="text-xs text-slate-400 italic py-2">
+                  No hay fechas importantes registradas aún. Agrega tus parciales abajo para recibir alertas previas.
+                </p>
+              ) : (
+                semesterForm.events.map((evt) => {
+                  const typeLabels: Record<AcademicEventType, { label: string; emoji: string; color: string }> = {
+                    parciales: { label: 'Parciales', emoji: '📝', color: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300' },
+                    finales: { label: 'Finales', emoji: '🎓', color: 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300' },
+                    matricula: { label: 'Matrícula', emoji: '💳', color: 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300' },
+                    vacaciones: { label: 'Vacaciones', emoji: '🏖️', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300' },
+                    otro: { label: 'Otro', emoji: '📌', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300' }
+                  };
+                  const meta = typeLabels[evt.type] || typeLabels.otro;
+
+                  return (
+                    <div
+                      key={evt.id}
+                      className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1 ${meta.color}`}>
+                          <span>{meta.emoji}</span>
+                          <span>{meta.label}</span>
+                        </span>
+                        <div>
+                          <div className="text-xs font-bold text-slate-900 dark:text-white">
+                            {evt.title}
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Fecha: {evt.date}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAcademicEvent(evt.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                        title="Eliminar evento"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Formulario rápido para agregar nueva fecha */}
+            <div className="p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-800/40 border border-dashed border-slate-300 dark:border-slate-700 space-y-3">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                <Plus className="w-3.5 h-3.5" /> Agregar Fecha Importante
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                <div className="sm:col-span-3">
+                  <select
+                    value={newEventType}
+                    onChange={(e) => setNewEventType(e.target.value as AcademicEventType)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                  >
+                    <option value="parciales">📝 Parciales</option>
+                    <option value="finales">🎓 Finales</option>
+                    <option value="matricula">💳 Matrícula</option>
+                    <option value="vacaciones">🏖️ Vacaciones</option>
+                    <option value="otro">📌 Otro</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-5">
+                  <input
+                    type="text"
+                    placeholder="Ej: Semana de Parciales 2"
+                    value={newEventTitle}
+                    onChange={(e) => setNewEventTitle(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div className="sm:col-span-4">
+                  <input
+                    type="date"
+                    value={newEventDate}
+                    onChange={(e) => setNewEventDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleAddAcademicEvent}
+                  disabled={!newEventTitle.trim() || !newEventDate}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs disabled:opacity-40 cursor-pointer"
+                >
+                  + Agregar Evento a la Lista
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Botón Guardar Todo */}
+          <div className="flex items-center justify-between pt-2">
+            <button
+              type="submit"
+              className="px-5 py-2.5 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white shadow-sm transition-all cursor-pointer"
+            >
+              Guardar Configuración del Semestre
+            </button>
+            {semesterSaved && (
+              <span className="text-xs text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                <Check className="w-4 h-4" /> ¡Configuración del semestre guardada!
+              </span>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* SECCIÓN 4: GESTIÓN DE DATOS Y RESPALDO */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 space-y-4">
         <div>
           <h3 className="font-bold text-base text-slate-900 dark:text-white">

@@ -43,15 +43,17 @@ import {
   YAxis, 
   CartesianGrid 
 } from 'recharts';
-import { ActiveTab, BudgetConfig, MovementType, SavingsGoal, Transaction, UserProfile } from '../../types';
+import { ActiveTab, BudgetConfig, MovementType, SavingsGoal, SemesterConfig, Transaction, UserProfile } from '../../types';
 import { formatCOP, formatDate } from '../../utils/formatters';
 import { getCategoryInfo } from '../../utils/categories';
+import { RunwayCard } from '../RunwayCard';
 
 interface DashboardViewProps {
   transactions: Transaction[];
   budget: BudgetConfig;
   goals: SavingsGoal[];
   userProfile: UserProfile;
+  semesterConfig: SemesterConfig;
   onUpdateUserName?: (name: string) => void;
   onUpdateProfile?: (profile: Partial<UserProfile>) => void;
   onOpenAddModal: (defaultType?: MovementType) => void;
@@ -72,6 +74,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   budget,
   goals,
   userProfile,
+  semesterConfig,
   onUpdateUserName,
   onUpdateProfile,
   onOpenAddModal,
@@ -637,6 +640,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
       </div>
+
+      {/* TARJETA: ¿HASTA CUÁNDO ME ALCANZA? */}
+      <RunwayCard
+        balance={balance}
+        transactions={transactions}
+        semesterConfig={semesterConfig}
+        onNavigateToSettings={() => onNavigateTab('settings')}
+        onOpenAddModal={onOpenAddModal}
+      />
 
       {/* SECCIÓN DE GRÁFICOS: DONA + BARRAS (COLORES SOBRIOS) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
