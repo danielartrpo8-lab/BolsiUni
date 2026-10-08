@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Download, Moon, Sun, Wallet, Sparkles, GraduationCap } from 'lucide-react';
+import { Download, FileSpreadsheet, Moon, Sun, Wallet, Sparkles, GraduationCap } from 'lucide-react';
 import { formatCOP } from '../utils/formatters';
 
 interface NavbarProps {
@@ -14,6 +14,7 @@ interface NavbarProps {
   onToggleDarkMode: () => void;
   balance: number;
   onExportPDF: () => void;
+  onExportExcel: () => void;
   hasApiKey: boolean;
   onOpenSettings: () => void;
   studentName: string;
@@ -24,6 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleDarkMode,
   balance,
   onExportPDF,
+  onExportExcel,
   hasApiKey,
   onOpenSettings,
   studentName
@@ -85,6 +87,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span className="hidden xs:inline">Informe PDF</span>
+          </button>
+
+          {/* Botón Descargar Excel */}
+          <button
+            onClick={onExportExcel}
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors shadow-sm"
+            title="Descargar movimientos en Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden xs:inline">Excel</span>
           </button>
 
           {/* Alternar Modo Oscuro / Claro */}
