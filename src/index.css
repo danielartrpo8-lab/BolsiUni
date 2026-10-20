@@ -3,8 +3,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Be Vietnam Pro', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  --color-moai-red: #e10b17;
+  --color-moai-red-dark: #c00510;
+  --color-moai-red-light: #fff1f2;
 }
 
 /* Custom scrollbars and styling */

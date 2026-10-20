@@ -2,12 +2,11 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * EduPlata - Servicio Frontend para Claude (Anthropic)
- * Se comunica exclusivamente con el backend (/api/claude/*), protegiendo la API key.
- * Incluye registro inteligente por chat, diagnóstico financiero y asesor de bolsillo.
+ * MOAI Inmobiliaria - Servicio Frontend para Claude (Anthropic)
+ * Comunicación segura mediante backend proxy (/api/claude/chat), protegiendo la API key.
  */
 
-import { QuickChatMessage, ClaudeToolCall, AIAnalysisResult, BudgetConfig, ChatMessage, SavingsGoal, Transaction, UserProfile } from '../types';
+import { QuickChatMessage, ClaudeToolCall } from '../types';
 
 export interface ClaudeChatResponse {
   success: boolean;
@@ -18,7 +17,7 @@ export interface ClaudeChatResponse {
 }
 
 /**
- * Enviar mensaje al chat rápido para registrar gastos, ingresos o pagos programados
+ * Enviar mensaje al asistente inteligente de MOAI para registrar cánones, comisiones, pagos o liquidaciones
  */
 export async function sendChatMessageToClaude(
   message: string,
@@ -32,7 +31,7 @@ export async function sendChatMessageToClaude(
       },
       body: JSON.stringify({
         message,
-        history: history.slice(-8)
+        history: history.slice(-6)
       })
     });
 
@@ -40,7 +39,7 @@ export async function sendChatMessageToClaude(
       const errData = await response.json().catch(() => null);
       return {
         success: false,
-        error: errData?.error || 'No pude procesar eso ahora, intenta de nuevo.'
+        error: errData?.error || 'No se pudo conectar con el motor contable en este momento.'
       };
     }
 
@@ -52,86 +51,10 @@ export async function sendChatMessageToClaude(
       mode: data.mode
     };
   } catch (err: any) {
-    console.error('Error llamando a Claude backend:', err);
+    console.error('Error llamando a Claude backend MOAI:', err);
     return {
       success: false,
-      error: 'No pude procesar eso ahora, intenta de nuevo.'
+      error: 'Error de conexión. Intenta de nuevo o registra manualmente.'
     };
-  }
-}
-
-/**
- * Genera el diagnóstico financiero inteligente (resumen, 3 recortes y 3 tips)
- */
-export async function analyzeFinancesWithClaude(
-  transactions: Transaction[],
-  budget: BudgetConfig,
-  goals: SavingsGoal[],
-  userProfile?: UserProfile
-): Promise<AIAnalysisResult> {
-  try {
-    const response = await fetch('/api/claude/analyze', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        transactions,
-        budget,
-        goals,
-        userProfile
-      })
-    });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => null);
-      throw new Error(errData?.error || 'No se pudo generar el diagnóstico financiero con Claude.');
-    }
-
-    const data = await response.json();
-    return data.result;
-  } catch (err: any) {
-    console.error('Error en diagnóstico con Claude:', err);
-    throw err;
-  }
-}
-
-/**
- * Consulta al Asesor Financiero Universitario interactivo con Claude
- */
-export async function chatWithClaudeFinancialAdvisor(
-  question: string,
-  history: ChatMessage[],
-  transactions: Transaction[],
-  budget: BudgetConfig,
-  goals: SavingsGoal[],
-  userProfile?: UserProfile
-): Promise<string> {
-  try {
-    const response = await fetch('/api/claude/financial-advisor', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        question,
-        history: history.slice(-6),
-        transactions,
-        budget,
-        goals,
-        userProfile
-      })
-    });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => null);
-      throw new Error(errData?.error || 'No pude consultar a Claude en este momento.');
-    }
-
-    const data = await response.json();
-    return data.answer;
-  } catch (err: any) {
-    console.error('Error en chat financiero con Claude:', err);
-    throw err;
   }
 }

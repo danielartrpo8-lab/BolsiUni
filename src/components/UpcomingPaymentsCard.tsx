@@ -2,203 +2,176 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * EduPlata - Tarjeta en el Inicio: "Próximos pagos"
- * Muestra los 3 pagos más cercanos, el total de los próximos 15 días,
- * y compara contra el saldo actual mostrando alerta en rojo si falta plata.
+ * MOAI Inmobiliaria - Tarjeta Ejecutiva de "Próximos Pagos y Dispersiones"
+ * Muestra los 3 compromisos más cercanos, total de los próximos 15 días,
+ * y verifica la suficiencia de caja para cubrirlos.
  */
 
 import React from 'react';
-import { 
-  Calendar, 
-  ArrowRight, 
-  Check, 
-  AlertCircle, 
-  CheckCircle2, 
-  Clock, 
-  Repeat,
-  CalendarDays
-} from 'lucide-react';
+import { CalendarDays, AlertTriangle, CheckCircle2, Clock, ArrowRight, Building2 } from 'lucide-react';
 import { ScheduledPayment } from '../types';
 import { formatCOP } from '../utils/formatters';
-import { formatDueBadge, getDaysDifference } from '../utils/calendarUtils';
+import { getDaysRemaining } from '../utils/calendarUtils';
 
 interface UpcomingPaymentsCardProps {
   payments: ScheduledPayment[];
   currentBalance: number;
   onNavigateToCalendar: () => void;
-  onPayPayment: (payment: ScheduledPayment) => void;
+  onExecutePayment: (payment: ScheduledPayment) => void;
 }
 
 export const UpcomingPaymentsCard: React.FC<UpcomingPaymentsCardProps> = ({
   payments,
   currentBalance,
   onNavigateToCalendar,
-  onPayPayment
+  onExecutePayment
 }) => {
-  // Filtrar pendientes y ordenar por fecha más cercana
-  const unpaidPayments = payments
-    .filter((p) => !p.isPaid)
+  const pendingPayments = payments
+    .filter(p => p.status === 'pendiente')
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
-  // Los 3 más cercanos
-  const next3Payments = unpaidPayments.slice(0, 3);
+  const next3 = pendingPayments.slice(0, 3);
 
   // Pagos en los próximos 15 días
-  const next15DaysPayments = unpaidPayments.filter((p) => {
-    const diff = getDaysDifference(p.dueDate);
+  const next15Days = pendingPayments.filter(p => {
+    const diff = getDaysRemaining(p.dueDate);
     return diff >= 0 && diff <= 15;
   });
 
-  const totalNext15Days = next15DaysPayments.reduce((sum, p) => sum + p.amount, 0);
+  const totalNext15Days = next15Days.reduce((acc, p) => acc + p.amount, 0);
   const shortfall = Math.max(0, totalNext15Days - currentBalance);
-  const isShortfall = shortfall > 0;
+  const isDeficit = shortfall > 0;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs p-6 space-y-5">
+    <div className="bg-white dark:bg-[#15171c] p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs mb-6">
       
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-            <Calendar className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#e10b17] flex items-center justify-center">
+            <CalendarDays className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-              <span>Próximos Pagos</span>
-              <span className="text-xs bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 font-bold px-2 py-0.5 rounded-full">
-                {unpaidPayments.length} pendientes
-              </span>
+            <h3 className="font-bold text-base text-gray-900 dark:text-white font-heading">
+              Próximos Pagos y Dispersiones
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Compromisos futuros y vencimientos del mes
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Control de tesorería y calendario inmobiliario a 15 días
             </p>
           </div>
         </div>
 
         <button
           onClick={onNavigateToCalendar}
-          className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1 transition-colors cursor-pointer group"
+          className="text-xs font-semibold text-[#e10b17] hover:underline flex items-center gap-1 self-start sm:self-auto"
         >
-          <span>Ver calendario</span>
-          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+          Ver Calendario Completo <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* BANNER DE BALANCE VS PRÓXIMOS 15 DÍAS */}
-      <div
-        className={`p-4 rounded-2xl border transition-all ${
-          isShortfall
-            ? 'bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-200'
-            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200'
-        }`}
-      >
+      {/* Resumen de 15 días y Alerta de Liquidez */}
+      <div className={`p-4 rounded-xl border mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+        isDeficit
+          ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40'
+          : 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40'
+      }`}>
         <div className="flex items-start gap-3">
-          <div
-            className={`p-2 rounded-xl shrink-0 mt-0.5 ${
-              isShortfall ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'
-            }`}
-          >
-            {isShortfall ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-          </div>
-
-          <div className="flex-1 text-xs">
-            {isShortfall ? (
-              <div>
-                <p className="font-extrabold text-sm text-rose-600 dark:text-rose-400">
-                  Te faltan {formatCOP(shortfall)} para cubrir tus pagos de los próximos 15 días.
-                </p>
-                <p className="mt-1 text-slate-600 dark:text-slate-300">
-                  Vienen compromisos por <strong>{formatCOP(totalNext15Days)}</strong> y tu saldo actual en bolsillo es de <strong>{formatCOP(currentBalance)}</strong>. Procura reservar plata o moderar gastos en ocio.
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
-                  ¡Vas bien! Tienes saldo suficiente para cubrir tus pagos de los próximos 15 días.
-                </p>
-                <p className="mt-1 text-slate-600 dark:text-slate-300">
-                  Compromisos próximos: <strong>{formatCOP(totalNext15Days)}</strong> vs Saldo actual: <strong>{formatCOP(currentBalance)}</strong>. Te quedará un colchón de <strong>{formatCOP(currentBalance - totalNext15Days)}</strong>.
-                </p>
-              </div>
-            )}
+          {isDeficit ? (
+            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+          )}
+          <div>
+            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+              Total compromisos próximos 15 días ({next15Days.length} pagos)
+            </p>
+            <p className="text-lg font-bold font-mono text-gray-900 dark:text-white">
+              {formatCOP(totalNext15Days)}
+            </p>
           </div>
         </div>
+
+        {isDeficit ? (
+          <div className="text-right">
+            <span className="inline-block text-xs font-bold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/40 px-2.5 py-1 rounded-lg">
+              Faltan {formatCOP(shortfall)} para cubrir los pagos
+            </span>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+              Verifica los recaudos de cánones pendientes por ingresar.
+            </p>
+          </div>
+        ) : (
+          <div className="text-right">
+            <span className="inline-block text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-1 rounded-lg">
+              Caja suficiente para cubrir los compromisos
+            </span>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+              Excedente operativo: {formatCOP(currentBalance - totalNext15Days)}
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* LISTA DE LOS 3 PAGOS MÁS CERCANOS */}
-      {next3Payments.length === 0 ? (
-        <div className="p-6 text-center rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs space-y-1">
-          <CalendarDays className="w-6 h-6 mx-auto text-slate-400 mb-1" />
-          <p className="font-semibold text-slate-700 dark:text-slate-300">No tienes pagos futuros programados</p>
-          <p>Usa el Chat rápido para escribir "el 30 pago arriendo 650k" y quedará aquí registrado.</p>
-        </div>
-      ) : (
-        <div className="space-y-2.5">
-          {next3Payments.map((p) => {
-            const dueBadge = formatDueBadge(p.dueDate);
+      {/* Lista de los 3 pagos más cercanos */}
+      <div className="space-y-2.5">
+        {next3.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4 italic">
+            No hay pagos ni dispersiones pendientes registradas.
+          </p>
+        ) : (
+          next3.map((payment) => {
+            const days = getDaysRemaining(payment.dueDate);
+            const isDueSoon = days <= 3 && days >= 0;
+            const isOverdue = days < 0;
 
             return (
               <div
-                key={p.id}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/60 hover:border-purple-300 dark:hover:border-purple-800/80 transition-all"
+                key={payment.id}
+                className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 dark:bg-[#1a1d23] border border-gray-200/80 dark:border-gray-800 transition-colors hover:border-gray-300"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">
-                    <Clock className="w-4 h-4" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                    isOverdue
+                      ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-600'
+                      : isDueSoon
+                      ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600'
+                      : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                  }`}>
+                    {days === 0 ? 'Hoy' : isOverdue ? `-${Math.abs(days)}d` : `${days}d`}
                   </div>
                   <div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <h4 className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100">
-                        {p.description}
-                      </h4>
-                      {p.recurrence !== 'ninguna' && (
-                        <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.2 rounded-md font-medium">
-                          {p.recurrence}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {payment.title}
+                      </span>
+                      {payment.propertyCode && (
+                        <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded-md bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                          {payment.propertyCode}
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
-                      <span>{p.category}</span>
-                      <span>•</span>
-                      <span>{p.dueDate}</span>
-                    </span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Vence: {payment.dueDate} • Beneficiario: {payment.beneficiary}
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${dueBadge.colorClass}`}>
-                      {dueBadge.text}
-                    </span>
-                    <p className="font-extrabold text-sm sm:text-base font-mono text-slate-900 dark:text-slate-100 mt-0.5">
-                      {formatCOP(p.amount)}
-                    </p>
-                  </div>
-
-                  {/* Botón rápido "Ya lo pagué" */}
+                  <span className="text-sm font-bold font-mono text-gray-900 dark:text-white">
+                    {formatCOP(payment.amount)}
+                  </span>
                   <button
-                    onClick={() => onPayPayment(p)}
-                    className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all cursor-pointer shadow-xs hover:scale-105"
-                    title="Marcar como pagado hoy (registra gasto real)"
+                    onClick={() => onExecutePayment(payment)}
+                    className="text-xs font-semibold bg-gray-200 hover:bg-[#e10b17] hover:text-white dark:bg-gray-800 dark:hover:bg-[#e10b17] text-gray-700 dark:text-gray-200 px-2.5 py-1.5 rounded-lg transition-colors"
+                    title="Asentar pago como ejecutado en libros"
                   >
-                    <Check className="w-4 h-4 stroke-[3]" />
+                    Ya lo pagué
                   </button>
                 </div>
               </div>
             );
-          })}
-        </div>
-      )}
-
-      {/* Footer link */}
-      <div className="pt-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800">
-        <span>Sincroniza con Google Calendar y .ics</span>
-        <button
-          onClick={onNavigateToCalendar}
-          className="font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
-        >
-          Gestionar en Calendario →
-        </button>
+          })
+        )}
       </div>
 
     </div>

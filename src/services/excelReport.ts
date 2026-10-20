@@ -2,87 +2,90 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * Generador de informe en Excel (.CSV compatible con Microsoft Excel)
- * para EduPlata. Funciona 100% en el navegador con soporte de tildes UTF-8 BOM.
+ * MOAI Inmobiliaria - Exportador Contable a Excel (.CSV)
+ * Genera libro diario compatible con Microsoft Excel (BOM UTF-8, separador ;)
+ * con separación de fondos propios de MOAI y fondos en custodia de terceros.
  */
 
-import { BudgetConfig, Transaction, UserProfile } from '../types';
+import { CompanyProfile, Transaction } from '../types';
 import { getCategoryInfo } from '../utils/categories';
 import { formatCOP } from '../utils/formatters';
 
 export function exportTransactionsToExcel(
   transactions: Transaction[],
-  userProfile: UserProfile,
-  budget: BudgetConfig
+  companyProfile: CompanyProfile
 ): void {
-  const studentName = userProfile.name?.trim() ? userProfile.name.trim() : 'Estudiante (No registrado)';
-  const universityName = userProfile.university?.trim() ? userProfile.university.trim() : 'No registrada';
   const today = new Date().toISOString().slice(0, 10);
 
-  // Cálculos
-  const totalIncome = transactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  // Cálculos contables
+  let moaiIncomes = 0;
+  let moaiExpenses = 0;
+  let custodyIncomes = 0;
+  let custodyExpenses = 0;
 
-  const totalExpense = transactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const balance = totalIncome - totalExpense;
-
-  // Encabezados con separador de punto y coma ';' que es el estándar de Excel en países hispanohablantes
-  const rows: string[] = [];
-
-  // Metadatos
-  rows.push(`"EduPlata - Reporte Financiero Universitario"`);
-  rows.push(`"Estudiante:";"${studentName}"`);
-  rows.push(`"Universidad:";"${universityName}"`);
-  if (userProfile.career?.trim()) {
-    rows.push(`"Carrera:";"${userProfile.career.trim()}"`);
-  }
-  if (userProfile.semester?.trim()) {
-    rows.push(`"Semestre:";"${userProfile.semester.trim()}"`);
-  }
-  rows.push(`"Fecha de exportación:";"${today}"`);
-  rows.push(`"Saldo en Bolsillo:";"${formatCOP(balance)}"`);
-  rows.push(`"Ingresos Totales:";"${formatCOP(totalIncome)}"`);
-  rows.push(`"Gastos Totales:";"${formatCOP(totalExpense)}"`);
-  rows.push(`"Presupuesto Mensual Fijado:";"${formatCOP(budget.monthlyExpenseLimit)}"`);
-  rows.push(''); // Fila vacía
-
-  // Cabecera de la tabla de movimientos
-  rows.push(`"Fecha";"Tipo";"Categoría";"Monto (COP)";"Concepto / Nota"`);
-
-  // Filas de movimientos ordenadas por fecha
-  const sorted = [...transactions].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-
-  sorted.forEach((t) => {
-    const info = getCategoryInfo(t.category);
-    const tipo = t.type === 'income' ? 'Ingreso (+)' : 'Gasto (-)';
-    const monto = t.type === 'income' ? t.amount : -t.amount;
-    const nota = (t.note || '').replace(/"/g, '""');
-
-    rows.push(`"${t.date}";"${tipo}";"${info.name}";"${monto}";"${nota}"`);
+  transactions.forEach((t) => {
+    if (t.fundType === 'moai_operativa') {
+      if (t.type === 'income') moaiIncomes += t.amount;
+      else moaiExpenses += t.amount;
+    } else {
+      if (t.type === 'income') custodyIncomes += t.amount;
+      else custodyExpenses += t.amount;
+    }
   });
 
-  rows.push('');
-  rows.push(`"RESUMEN FINAL";"";"";"";""`);
-  rows.push(`"TOTAL INGRESOS";"";"";"${totalIncome}";""`);
-  rows.push(`"TOTAL GASTOS";"";"";"-${totalExpense}";""`);
-  rows.push(`"SALDO DISPONIBLE";"";"";"${balance}";""`);
+  const moaiNetProfit = moaiIncomes - moaiExpenses;
+  const custodyPending = custodyIncomes - custodyExpenses;
 
-  // Construir archivo CSV con BOM UTF-8 para que Excel lo abra con acentos correctos
+  const rows: string[] = [];
+
+  // Metadatos de la Empresa
+  rows.push(`"MOAI Inmobiliaria S.A.S. - Libro Diario y Reporte Contable"`);
+  rows.push(`"NIT:";"${companyProfile.nit}"`);
+  rows.push(`"Sede:";"${companyProfile.address}, ${companyProfile.city}"`);
+  rows.push(`"Contacto:";"${companyProfile.phone} - ${companyProfile.email}"`);
+  rows.push(`"Fecha de Emisión:";"${today}"`);
+  rows.push('');
+  rows.push(`"ESTADO DE CAJA PROPIA MOAI"`);
+  rows.push(`"Ingresos Operativos (Comisiones & Servicios):";"${formatCOP(moaiIncomes)}"`);
+  rows.push(`"Gastos Operativos (Pauta, Nómina, Oficina):";"${formatCOP(moaiExpenses)}"`);
+  rows.push(`"Utilidad Neta MOAI:";"${formatCOP(moaiNetProfit)}"`);
+  rows.push('');
+  rows.push(`"FONDO EN CUSTODIA (CUENTAS DE TERCEROS - PROPIETARIOS)"`);
+  rows.push(`"Total Cánones Recaudados:";"${formatCOP(custodyIncomes)}"`);
+  rows.push(`"Total Cánones Dispersados a Dueños:";"${formatCOP(custodyExpenses)}"`);
+  rows.push(`"Saldo Pendiente en Custodia:";"${formatCOP(custodyPending)}"`);
+  rows.push('');
+
+  // Encabezados de tabla
+  rows.push(`"Fecha";"Fondo Contable";"Tipo";"Categoría";"Inmueble";"Concepto / Descripción";"Beneficiario / Pagador";"N° Comprobante";"Monto en COP"`);
+
+  // Movimientos ordenados por fecha
+  const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
+
+  sorted.forEach((t) => {
+    const cat = getCategoryInfo(t.category);
+    const fundName = t.fundType === 'moai_operativa' ? 'Caja Operativa MOAI' : 'Custodia Propietarios';
+    const typeName = t.type === 'income' ? 'Ingreso (+)' : 'Egreso (-)';
+    const amountSign = t.type === 'income' ? t.amount : -t.amount;
+    const safeDesc = (t.description || '').replace(/"/g, '""');
+    const safeRecip = (t.recipientOrPayer || '').replace(/"/g, '""');
+    const safeProp = t.propertyCode || 'General';
+    const safeRef = t.referenceNumber || 'N/A';
+
+    rows.push(
+      `"${t.date}";"${fundName}";"${typeName}";"${cat.name}";"${safeProp}";"${safeDesc}";"${safeRecip}";"${safeRef}";"${amountSign}"`
+    );
+  });
+
+  // Codificación UTF-8 con BOM para acentos y caracteres especiales en Excel
   const csvContent = '\uFEFF' + rows.join('\r\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-
-  const cleanName = studentName.replace(/\s+/g, '_');
   const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `EduPlata_Movimientos_${cleanName}_${today}.csv`);
+  link.href = url;
+  link.setAttribute('download', `MOAI_Libro_Contable_${today}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

@@ -2,31 +2,32 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * Vista de Presupuesto Mensual
- * Configuración del presupuesto global y límites por categoría,
- * barras de progreso dinámicas (verde, amarillo, rojo).
+ * MOAI Inmobiliaria - Control Presupuestal y Metas Comerciales
+ * Seguimiento de metas de ingresos (comisiones arriendos, ventas y reformas)
+ * y techos de gastos operativos por departamento (marketing, asesores, oficina).
  */
 
 import React, { useState, useMemo } from 'react';
 import { 
   PieChart, 
-  Settings2, 
-  AlertCircle, 
+  Target, 
+  TrendingUp, 
+  TrendingDown, 
+  AlertTriangle, 
   CheckCircle2, 
-  Check, 
-  Edit3, 
-  Info, 
-  ArrowUpRight,
-  TrendingDown,
-  SlidersHorizontal
+  Building2, 
+  SlidersHorizontal,
+  Plus,
+  Coins
 } from 'lucide-react';
-import { BudgetConfig, ExpenseCategoryId, Transaction } from '../../types';
-import { EXPENSE_CATEGORIES } from '../../utils/categories';
+import { BudgetConfig, MoaiExpenseCategory, MoaiIncomeCategory, Transaction, Property } from '../../types';
+import { MOAI_EXPENSE_CATEGORIES, MOAI_INCOME_CATEGORIES, getCategoryInfo } from '../../utils/categories';
 import { formatCOP } from '../../utils/formatters';
 
 interface BudgetViewProps {
   budget: BudgetConfig;
   transactions: Transaction[];
+  properties: Property[];
   onUpdateBudget: (newBudget: BudgetConfig) => void;
   onOpenBudgetModal?: () => void;
 }
@@ -34,382 +35,318 @@ interface BudgetViewProps {
 export const BudgetView: React.FC<BudgetViewProps> = ({
   budget,
   transactions,
+  properties,
   onUpdateBudget,
   onOpenBudgetModal
 }) => {
-  const [isEditingGlobal, setIsEditingGlobal] = useState(false);
-  const [globalLimitStr, setGlobalLimitStr] = useState(budget.monthlyExpenseLimit.toString());
+  const [isEditingModalOpen, setIsEditingModalOpen] = useState(false);
+  const [formIncomeTarget, setFormIncomeTarget] = useState(budget.monthlyIncomeTarget.toString());
+  const [formExpenseLimit, setFormExpenseLimit] = useState(budget.monthlyExpenseLimit.toString());
+  const [formPropertiesTarget, setFormPropertiesTarget] = useState(budget.targetLeasedProperties.toString());
 
-  const [editingCategory, setEditingCategory] = useState<ExpenseCategoryId | null>(null);
-  const [catLimitStr, setCatLimitStr] = useState('');
-  const [budgetError, setBudgetError] = useState<string | null>(null);
-
-  // Gastos del mes agrupados por categoría
-  const categorySpent = useMemo(() => {
+  // Ingresos reales por categoría (solo caja operativa MOAI)
+  const incomeRealized = useMemo(() => {
     const map: Record<string, number> = {};
     transactions
-      .filter((t) => t.type === 'expense')
-      .forEach((t) => {
+      .filter(t => t.type === 'income' && t.fundType === 'moai_operativa')
+      .forEach(t => {
         map[t.category] = (map[t.category] || 0) + t.amount;
       });
     return map;
   }, [transactions]);
 
-  const totalSpent = useMemo(() => {
-    return Object.values(categorySpent).reduce((s, v) => s + v, 0);
-  }, [categorySpent]);
+  // Gastos reales por categoría (solo gastos operativos propios MOAI)
+  const expenseRealized = useMemo(() => {
+    const map: Record<string, number> = {};
+    transactions
+      .filter(t => t.type === 'expense' && t.fundType === 'moai_operativa')
+      .forEach(t => {
+        map[t.category] = (map[t.category] || 0) + t.amount;
+      });
+    return map;
+  }, [transactions]);
 
-  const globalSpentPct = budget.monthlyExpenseLimit > 0
-    ? Math.round((totalSpent / budget.monthlyExpenseLimit) * 100)
+  const totalIncomeRealized = useMemo(() => {
+    return Object.values(incomeRealized).reduce((sum, v) => sum + v, 0);
+  }, [incomeRealized]);
+
+  const totalExpenseRealized = useMemo(() => {
+    return Object.values(expenseRealized).reduce((sum, v) => sum + v, 0);
+  }, [expenseRealized]);
+
+  const incomeExecution = budget.monthlyIncomeTarget > 0 
+    ? (totalIncomeRealized / budget.monthlyIncomeTarget) * 100 
     : 0;
 
-  const totalAllocatedSpecific = useMemo(() => {
-    return Object.values(budget.categoryLimits).reduce((s, v) => s + (v || 0), 0);
-  }, [budget.categoryLimits]);
+  const expenseExecution = budget.monthlyExpenseLimit > 0 
+    ? (totalExpenseRealized / budget.monthlyExpenseLimit) * 100 
+    : 0;
 
-  const handleSaveGlobal = (e: React.FormEvent) => {
+  const leasedCount = properties.filter(p => p.status === 'arrendado').length;
+  const portfolioExecution = budget.targetLeasedProperties > 0
+    ? (leasedCount / budget.targetLeasedProperties) * 100
+    : 0;
+
+  const handleSaveBudget = (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseInt(globalLimitStr.replace(/[^0-9]/g, ''), 10);
-    if (!isNaN(val) && val >= 0) {
-      if (val > 0 && totalAllocatedSpecific > val) {
-        setBudgetError(
-          `El presupuesto mensual (${formatCOP(val)}) no puede ser menor que la suma de tus gastos específicos asignados (${formatCOP(totalAllocatedSpecific)}).`
-        );
-        return;
-      }
-      setBudgetError(null);
-      onUpdateBudget({
-        ...budget,
-        monthlyExpenseLimit: val
-      });
-      setIsEditingGlobal(false);
-    }
-  };
-
-  const handleStartEditCat = (catId: ExpenseCategoryId) => {
-    setEditingCategory(catId);
-    setBudgetError(null);
-    setCatLimitStr((budget.categoryLimits[catId] || 0).toString());
-  };
-
-  const handleSaveCatLimit = (catId: ExpenseCategoryId) => {
-    const val = parseInt(catLimitStr.replace(/[^0-9]/g, ''), 10) || 0;
-    const newLimits = {
-      ...budget.categoryLimits,
-      [catId]: val
-    };
-    const newTotalSpecific = Object.values(newLimits).reduce((s, v) => s + (v || 0), 0);
-    if (budget.monthlyExpenseLimit > 0 && newTotalSpecific > budget.monthlyExpenseLimit) {
-      setBudgetError(
-        `No se puede asignar ${formatCOP(val)} a ${EXPENSE_CATEGORIES[catId]?.name || catId}. La suma de gastos específicos (${formatCOP(newTotalSpecific)}) superaría tu presupuesto total (${formatCOP(budget.monthlyExpenseLimit)}).`
-      );
-      return;
-    }
-    setBudgetError(null);
     onUpdateBudget({
       ...budget,
-      categoryLimits: newLimits
+      monthlyIncomeTarget: parseInt(formIncomeTarget.replace(/\D/g, ''), 10) || budget.monthlyIncomeTarget,
+      monthlyExpenseLimit: parseInt(formExpenseLimit.replace(/\D/g, ''), 10) || budget.monthlyExpenseLimit,
+      targetLeasedProperties: parseInt(formPropertiesTarget.replace(/\D/g, ''), 10) || budget.targetLeasedProperties
     });
-    setEditingCategory(null);
+    setIsEditingModalOpen(false);
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 pb-12">
       
-      {/* CABECERA */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Encabezado */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#15171c] p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Presupuesto Mensual Universitario
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-bold text-[#e10b17] uppercase tracking-wider">
+              Control de Gestión MOAI
+            </span>
+            <span className="text-gray-300 dark:text-gray-700">•</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Presupuesto Mensual & Metas
+            </span>
+          </div>
+          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white font-heading tracking-tight">
+            Presupuesto & Metas Comerciales
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Define topes máximos para no gastar de más en comida, salidas o fotocopias
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Monitoreo en tiempo real de metas de comisiones de arriendos, ventas cerradas y control de gastos operativos.
           </p>
         </div>
-        {onOpenBudgetModal && (
-          <button
-            onClick={onOpenBudgetModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-xs font-bold transition-all shadow-sm cursor-pointer self-start sm:self-auto"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span>Configurar Todos los Límites</span>
-          </button>
-        )}
+
+        <button
+          onClick={() => setIsEditingModalOpen(true)}
+          className="flex items-center gap-2 bg-gray-100 dark:bg-[#1f2229] hover:bg-gray-200 dark:hover:bg-[#282c35] text-gray-800 dark:text-gray-200 text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700/80 transition-all self-start sm:self-auto"
+        >
+          <SlidersHorizontal className="w-4 h-4 text-[#e10b17]" />
+          <span>Ajustar Metas y Techos</span>
+        </button>
       </div>
 
-      {budgetError && (
-        <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between gap-2 animate-in fade-in">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
-            <span>{budgetError}</span>
-          </div>
-          <button
-            onClick={() => setBudgetError(null)}
-            className="text-xs underline font-bold shrink-0 text-rose-800 dark:text-rose-200"
-          >
-            Cerrar
-          </button>
-        </div>
-      )}
-
-      {/* TARJETA DEL PRESUPUESTO GLOBAL */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Límite de Gastos Totales del Mes
+      {/* 3 Grandes Metas Globales */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        
+        {/* Meta 1: Ingresos por Comisiones */}
+        <div className="bg-white dark:bg-[#15171c] p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Meta Ingresos MOAI
             </span>
-            {isEditingGlobal ? (
-              <form onSubmit={handleSaveGlobal} className="flex items-center gap-2 mt-2">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400 font-mono">
-                    $
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={globalLimitStr ? parseInt(globalLimitStr.replace(/[^0-9]/g, ''), 10).toLocaleString('es-CO') : ''}
-                    onChange={(e) => setGlobalLimitStr(e.target.value.replace(/[^0-9]/g, ''))}
-                    autoFocus
-                    className="pl-8 pr-3 py-1.5 text-lg font-bold font-mono rounded-xl border border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 text-slate-900 dark:text-white focus:outline-none"
-                  />
+            <TrendingUp className="w-4 h-4 text-emerald-600" />
+          </div>
+
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">
+              {formatCOP(totalIncomeRealized)}
+            </span>
+            <span className="text-xs text-gray-400 font-mono">
+              / {formatCOP(budget.monthlyIncomeTarget)}
+            </span>
+          </div>
+
+          <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden mb-2">
+            <div 
+              className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, incomeExecution)}%` }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-emerald-600">{incomeExecution.toFixed(1)}% alcanzado</span>
+            <span className="text-gray-400">
+              Resta {formatCOP(Math.max(0, budget.monthlyIncomeTarget - totalIncomeRealized))}
+            </span>
+          </div>
+        </div>
+
+        {/* Meta 2: Techo de Gastos Operativos */}
+        <div className="bg-white dark:bg-[#15171c] p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Techo de Gastos Operativos
+            </span>
+            <TrendingDown className="w-4 h-4 text-rose-600" />
+          </div>
+
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">
+              {formatCOP(totalExpenseRealized)}
+            </span>
+            <span className="text-xs text-gray-400 font-mono">
+              / {formatCOP(budget.monthlyExpenseLimit)}
+            </span>
+          </div>
+
+          <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden mb-2">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${
+                expenseExecution > 95 ? 'bg-rose-500' : expenseExecution > 80 ? 'bg-amber-500' : 'bg-blue-500'
+              }`}
+              style={{ width: `${Math.min(100, expenseExecution)}%` }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-xs">
+            <span className={`font-bold ${expenseExecution > 95 ? 'text-rose-600' : 'text-gray-600 dark:text-gray-300'}`}>
+              {expenseExecution.toFixed(1)}% ejecutado
+            </span>
+            <span className="text-gray-400">
+              Disponible {formatCOP(Math.max(0, budget.monthlyExpenseLimit - totalExpenseRealized))}
+            </span>
+          </div>
+        </div>
+
+        {/* Meta 3: Captación de Inmuebles en Cartera */}
+        <div className="bg-white dark:bg-[#15171c] p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Inmuebles en Administración
+            </span>
+            <Building2 className="w-4 h-4 text-[#e10b17]" />
+          </div>
+
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">
+              {leasedCount}
+            </span>
+            <span className="text-xs text-gray-400 font-mono">
+              / Meta {budget.targetLeasedProperties} inmuebles
+            </span>
+          </div>
+
+          <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden mb-2">
+            <div 
+              className="bg-[#e10b17] h-full rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, portfolioExecution)}%` }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-[#e10b17]">{portfolioExecution.toFixed(1)}% meta</span>
+            <span className="text-gray-400">
+              Faltan {Math.max(0, budget.targetLeasedProperties - leasedCount)} captaciones
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Control Detallado de Gastos por Centro de Costo */}
+      <div className="bg-white dark:bg-[#15171c] p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs">
+        <h3 className="font-bold text-base text-gray-900 dark:text-white font-heading mb-4">
+          Control de Gastos por Departamento
+        </h3>
+
+        <div className="space-y-4">
+          {Object.entries(MOAI_EXPENSE_CATEGORIES)
+            .filter(([catId]) => catId !== 'dispersion_propietarios' && catId !== 'administracion_ph')
+            .map(([catId, catInfo]) => {
+              const spent = expenseRealized[catId] || 0;
+              const limit = budget.categoryLimits[catId as MoaiExpenseCategory] || 1000000;
+              const pct = limit > 0 ? (spent / limit) * 100 : 0;
+              const isOver = spent > limit;
+
+              return (
+                <div key={catId} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                      <span>{catInfo.emoji}</span>
+                      <span>{catInfo.name}</span>
+                    </span>
+                    <span className="font-mono">
+                      <span className="font-bold text-gray-900 dark:text-white">{formatCOP(spent)}</span>
+                      <span className="text-gray-400"> / {formatCOP(limit)}</span>
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${
+                        isOver ? 'bg-rose-500' : pct > 80 ? 'bg-amber-500' : 'bg-gray-600 dark:bg-gray-400'
+                      }`}
+                      style={{ width: `${Math.min(100, pct)}%` }}
+                    />
+                  </div>
                 </div>
-                <button
-                  type="submit"
-                  className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500"
-                >
-                  Guardar
-                </button>
+              );
+            })}
+        </div>
+      </div>
+
+      {/* Modal Editar Metas */}
+      {isEditingModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#15171c] w-full max-w-md rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl p-6">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="font-bold text-base text-gray-900 dark:text-white font-heading">
+                Ajustar Metas y Techos Presupuestales
+              </h3>
+              <button onClick={() => setIsEditingModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveBudget} className="space-y-4 mt-4 text-xs">
+              <div>
+                <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+                  Meta Mensual de Ingresos MOAI (COP):
+                </label>
+                <input
+                  type="number"
+                  value={formIncomeTarget}
+                  onChange={(e) => setFormIncomeTarget(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-mono text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+                  Techo Mensual de Gastos Operativos (COP):
+                </label>
+                <input
+                  type="number"
+                  value={formExpenseLimit}
+                  onChange={(e) => setFormExpenseLimit(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-mono text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+                  Meta de Inmuebles en Administración:
+                </label>
+                <input
+                  type="number"
+                  value={formPropertiesTarget}
+                  onChange={(e) => setFormPropertiesTarget(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-mono text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsEditingGlobal(false)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold"
+                  onClick={() => setIsEditingModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-300 font-semibold"
                 >
                   Cancelar
                 </button>
-              </form>
-            ) : (
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
-                  {formatCOP(budget.monthlyExpenseLimit)}
-                </span>
                 <button
-                  onClick={() => {
-                    setGlobalLimitStr(budget.monthlyExpenseLimit.toString());
-                    setIsEditingGlobal(true);
-                  }}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  title="Cambiar presupuesto mensual"
+                  type="submit"
+                  className="bg-[#e10b17] hover:bg-[#c00510] text-white px-5 py-2 rounded-xl font-bold shadow-xs"
                 >
-                  <Edit3 className="w-4 h-4" />
+                  Guardar Presupuesto
                 </button>
               </div>
-            )}
-          </div>
-
-          <div className="text-left md:text-right">
-            <span className="text-xs text-slate-400">Total gastado hasta hoy:</span>
-            <div className="text-xl sm:text-2xl font-extrabold font-mono text-rose-600 dark:text-rose-400">
-              {formatCOP(totalSpent)}
-            </div>
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              {globalSpentPct}% consumido • {formatCOP(Math.max(0, budget.monthlyExpenseLimit - totalSpent))} libre
-            </span>
+            </form>
           </div>
         </div>
-
-        {/* Barra de progreso global */}
-        <div className="mt-5 space-y-1.5">
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-3.5 rounded-full overflow-hidden p-0.5">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                globalSpentPct > 90
-                  ? 'bg-rose-500'
-                  : globalSpentPct > 70
-                  ? 'bg-amber-500'
-                  : 'bg-emerald-500'
-              }`}
-              style={{ width: `${Math.min(100, globalSpentPct)}%` }}
-            />
-          </div>
-          <div className="flex justify-between items-center text-[11px] text-slate-400">
-            <span>0%</span>
-            <span className="font-semibold">
-              {globalSpentPct <= 70 && '🟢 Zona segura (verde)'}
-              {globalSpentPct > 70 && globalSpentPct <= 90 && '🟡 Precaución (amarillo)'}
-              {globalSpentPct > 90 && '🔴 Límite crítico (rojo)'}
-            </span>
-            <span>100%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* LÍMITES POR CATEGORÍA */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-            Límites por Categoría de Gasto
-          </h3>
-          <span className="text-xs text-slate-400">
-            Haz clic en el lápiz para ajustar cada tope
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {Object.values(EXPENSE_CATEGORIES).map((cat) => {
-            const catId = cat.id as ExpenseCategoryId;
-            const spent = categorySpent[catId] || 0;
-            const limit = budget.categoryLimits[catId] || 0;
-            const hasLimit = limit > 0;
-            const spentPct = hasLimit ? Math.round((spent / limit) * 100) : 0;
-            const isEditing = editingCategory === catId;
-
-            // Colores de la barra por categoría:
-            // Verde (<70%), Amarillo (70-90%), Rojo (>90% o superado)
-            let statusColor = 'bg-emerald-500';
-            let badgeBg = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
-            let statusLabel = 'Controlado';
-
-            if (spentPct > 90) {
-              statusColor = 'bg-rose-500';
-              badgeBg = 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800';
-              statusLabel = spentPct > 100 ? 'Excedido' : 'Alerta crítica';
-            } else if (spentPct > 70) {
-              statusColor = 'bg-amber-500';
-              badgeBg = 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800';
-              statusLabel = 'Cerca al límite';
-            }
-
-            return (
-              <div
-                key={cat.id}
-                className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-              >
-                <div>
-                  {/* Encabezado de la categoría */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl shrink-0">
-                        {cat.emoji}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
-                          {cat.name}
-                        </h4>
-                        <p className="text-[11px] text-slate-400 line-clamp-1">
-                          {cat.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {hasLimit && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeBg}`}>
-                        {statusLabel}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Números: Gastado vs Límite */}
-                  <div className="flex items-baseline justify-between mt-3 text-xs">
-                    <div>
-                      <span className="text-slate-400">Gastado: </span>
-                      <strong className="text-sm font-bold font-mono text-slate-900 dark:text-white">
-                        {formatCOP(spent)}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400">Límite: </span>
-                      {isEditing ? (
-                        <div className="inline-flex items-center gap-1">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            value={catLimitStr ? parseInt(catLimitStr.replace(/[^0-9]/g, ''), 10).toLocaleString('es-CO') : ''}
-                            onChange={(e) => setCatLimitStr(e.target.value.replace(/[^0-9]/g, ''))}
-                            autoFocus
-                            placeholder="0"
-                            className="w-24 px-2 py-0.5 rounded-lg border border-emerald-500 bg-white dark:bg-slate-800 text-xs font-mono font-bold"
-                          />
-                          <button
-                            onClick={() => handleSaveCatLimit(catId)}
-                            className="p-1 rounded bg-emerald-600 text-white hover:bg-emerald-500"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="font-bold font-mono text-slate-700 dark:text-slate-300 inline-flex items-center gap-1">
-                          {hasLimit ? formatCOP(limit) : 'Sin límite'}
-                          <button
-                            onClick={() => handleStartEditCat(catId)}
-                            className="text-slate-400 hover:text-slate-600 p-0.5 ml-1"
-                            title="Modificar límite de categoría"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Barra de progreso de la categoría */}
-                  <div className="mt-3">
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${hasLimit ? statusColor : 'bg-slate-300 dark:bg-slate-700'}`}
-                        style={{ width: `${hasLimit ? Math.min(100, spentPct) : (spent > 0 ? 100 : 0)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Pie de la tarjeta */}
-                <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                  {hasLimit ? (
-                    <>
-                      <span>{spentPct}% gastado</span>
-                      <span className={spent > limit ? 'text-rose-600 dark:text-rose-400 font-bold' : ''}>
-                        {spent > limit ? `Excedido por ${formatCOP(spent - limit)}` : `Te sobran ${formatCOP(limit - spent)}`}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-slate-400 italic">
-                      Fija un límite para recibir alertas antes de que se acabe la plata
-                    </span>
-                  )}
-                </div>
-
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* CONSEJOS UNIVERSITARIOS DE PRESUPUESTO */}
-      <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white p-6 rounded-3xl shadow-md border border-slate-800 space-y-3">
-        <div className="flex items-center gap-2.5">
-          <span className="text-2xl">💡</span>
-          <h4 className="font-bold text-base text-white">
-            Estrategia de supervivencia universitaria
-          </h4>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300">
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <strong className="block text-emerald-400 mb-1">🍱 Almuerzos y refrigerios</strong>
-            Llevar almuerzo de casa 2 días a la semana te ahorra cerca de $120.000 al mes en corrientazos.
-          </div>
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <strong className="block text-teal-400 mb-1">🚌 Tarifa estudiantil de transporte</strong>
-            Pregunta en bienestar universitario por el auxilio o descuento de pasajes del sistema integrado.
-          </div>
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <strong className="block text-amber-400 mb-1">📚 Copias y libros digitales</strong>
-            Usa los repositorios de la biblioteca y comparte archivos PDF con tus compañeros en vez de imprimir todo.
-          </div>
-        </div>
-      </div>
+      )}
 
     </div>
   );

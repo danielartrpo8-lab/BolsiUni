@@ -2,7 +2,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * EduPlata - Utilidades de Calendario y Pagos Programados
+ * MOAI Inmobiliaria - Utilidades de Calendario y Pagos Programados
  * Generación de enlaces de Google Calendar, archivos .ics con alarmas (VALARM) y proyecciones.
  */
 
@@ -30,21 +30,22 @@ export function getNextDayCalendarString(dateStr: string): string {
 }
 
 /**
- * Genera el enlace directo a Google Calendar según la especificación
- * https://calendar.google.com/calendar/render?action=TEMPLATE&text={descripcion}%20-%20${monto}&dates={AAAAMMDD}/{AAAAMMDD+1}&details=Pago%20registrado%20desde%20EduPlata
+ * Genera el enlace directo a Google Calendar para un evento inmobiliario
  */
 export function generateGoogleCalendarUrl(payment: ScheduledPayment): string {
   const start = formatDateToCalendarString(payment.dueDate);
   const end = getNextDayCalendarString(payment.dueDate);
-  const title = `${payment.description} - $${payment.amount.toLocaleString('es-CO')}`;
-  const details = `Pago registrado desde EduPlata. Categoría: ${payment.category || 'General'}`;
+  const title = `[MOAI] ${payment.title} - $${payment.amount.toLocaleString('es-CO')}`;
+  const details = `Control Contable MOAI Inmobiliaria.\nBeneficiario/Involucrado: ${payment.beneficiary || 'N/A'}\nInmueble: ${payment.propertyCode || 'General'}\nNotas: ${payment.notes || 'Sin notas adicionales.'}\nSede Medellín: Calle 32C # 80A-45`;
 
   let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}`;
 
   if (payment.recurrence === 'mensual') {
     url += '&recur=RRULE:FREQ=MONTHLY';
-  } else if (payment.recurrence === 'semanal') {
-    url += '&recur=RRULE:FREQ=WEEKLY';
+  } else if (payment.recurrence === 'quincenal') {
+    url += '&recur=RRULE:FREQ=WEEKLY;INTERVAL=2';
+  } else if (payment.recurrence === 'anual') {
+    url += '&recur=RRULE:FREQ=YEARLY';
   }
 
   return url;
@@ -56,57 +57,55 @@ export function generateGoogleCalendarUrl(payment: ScheduledPayment): string {
 export function generateICSContent(payment: ScheduledPayment): string {
   const start = formatDateToCalendarString(payment.dueDate);
   const end = getNextDayCalendarString(payment.dueDate);
-  const title = `${payment.description} - $${payment.amount.toLocaleString('es-CO')}`;
+  const title = `[MOAI] ${payment.title} - $${payment.amount.toLocaleString('es-CO')}`;
   const daysBefore = Math.max(1, payment.reminderDaysBefore || 1);
+  const uid = `moai-${payment.id}-${Date.now()}@inmobiliariamoai.com`;
 
-  let rrule = '';
+  let recurRule = '';
   if (payment.recurrence === 'mensual') {
-    rrule = 'RRULE:FREQ=MONTHLY\r\n';
-  } else if (payment.recurrence === 'semanal') {
-    rrule = 'RRULE:FREQ=WEEKLY\r\n';
+    recurRule = 'RRULE:FREQ=MONTHLY\r\n';
+  } else if (payment.recurrence === 'quincenal') {
+    recurRule = 'RRULE:FREQ=WEEKLY;INTERVAL=2\r\n';
+  } else if (payment.recurrence === 'anual') {
+    recurRule = 'RRULE:FREQ=YEARLY\r\n';
   }
 
-  const nowString = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-  const uid = `eduplata-${payment.id}-${Date.now()}@eduplata.app`;
-
-  const icsLines = [
+  return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//EduPlata//Finanzas Universitarias Colombia//ES',
+    'PRODID:-//MOAI Inmobiliaria//Sistema Contable//ES',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
     `UID:${uid}`,
-    `DTSTAMP:${nowString}`,
+    `DTSTAMP:${formatDateToCalendarString(new Date().toISOString().slice(0, 10))}T120000Z`,
     `DTSTART;VALUE=DATE:${start}`,
     `DTEND;VALUE=DATE:${end}`,
     `SUMMARY:${title}`,
-    `DESCRIPTION:Pago programado desde EduPlata. Monto: $${payment.amount.toLocaleString('es-CO')} COP. Categoria: ${payment.category}`,
-    rrule ? rrule.trim() : null,
-    'STATUS:CONFIRMED',
+    `DESCRIPTION:Control Contable MOAI Inmobiliaria. Inmueble: ${payment.propertyCode || 'General'}. Beneficiario: ${payment.beneficiary}. ${payment.notes || ''}`,
+    `LOCATION:MOAI Inmobiliaria - Medellín, Colombia`,
+    recurRule.trim(),
     'BEGIN:VALARM',
     `TRIGGER:-P${daysBefore}D`,
     'ACTION:DISPLAY',
-    `DESCRIPTION:Recordatorio de pago EduPlata: ${payment.description} ($${payment.amount.toLocaleString('es-CO')})`,
+    `DESCRIPTION:Recordatorio MOAI: ${title}`,
     'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR'
-  ].filter(Boolean);
-
-  return icsLines.join('\r\n');
+  ].filter(Boolean).join('\r\n');
 }
 
 /**
- * Descarga directamente un archivo .ics en el navegador
+ * Descarga directamente el archivo .ics en el navegador
  */
-export function downloadICSFile(payment: ScheduledPayment) {
+export function downloadICSFile(payment: ScheduledPayment): void {
   const content = generateICSContent(payment);
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  const safeName = payment.description.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-  link.download = `eduplata_pago_${safeName}.ics`;
+  const safeTitle = payment.title.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25);
+  link.download = `moai_${safeTitle}_${payment.dueDate}.ics`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -114,99 +113,35 @@ export function downloadICSFile(payment: ScheduledPayment) {
 }
 
 /**
- * Calcula los días de diferencia entre hoy y una fecha YYYY-MM-DD
+ * Calcula los días faltantes para una fecha YYYY-MM-DD
  */
-export function getDaysDifference(dueDateStr: string): number {
-  const [y, m, d] = dueDateStr.split('-').map(Number);
-  const target = new Date(y, m - 1, d);
-  
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+export function getDaysRemaining(dueDateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const diffTime = target.getTime() - today.getTime();
+  const parts = dueDateStr.split('-');
+  if (parts.length !== 3) return 0;
+  const targetDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  targetDate.setHours(0, 0, 0, 0);
+
+  const diffTime = targetDate.getTime() - today.getTime();
   return Math.round(diffTime / (1000 * 60 * 60 * 24));
 }
 
 /**
- * Retorna etiqueta humana de vencimiento
+ * Calcula los pagos en los próximos N días
  */
-export function formatDueBadge(dueDateStr: string): { text: string; colorClass: string; isUrgent: boolean } {
-  const days = getDaysDifference(dueDateStr);
+export function getUpcomingPaymentsWithinDays(payments: ScheduledPayment[], days: number = 15): {
+  upcoming: ScheduledPayment[];
+  totalAmount: number;
+} {
+  const pending = payments.filter(p => p.status === 'pendiente');
+  
+  const upcoming = pending.filter(p => {
+    const diff = getDaysRemaining(p.dueDate);
+    return diff >= 0 && diff <= days;
+  }).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
-  if (days < 0) {
-    return {
-      text: `Venció hace ${Math.abs(days)} día${Math.abs(days) > 1 ? 's' : ''}`,
-      colorClass: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/40',
-      isUrgent: true
-    };
-  }
-  if (days === 0) {
-    return {
-      text: '¡Vence hoy!',
-      colorClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40 font-bold',
-      isUrgent: true
-    };
-  }
-  if (days === 1) {
-    return {
-      text: 'Vence mañana',
-      colorClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40',
-      isUrgent: true
-    };
-  }
-  if (days <= 7) {
-    return {
-      text: `En ${days} días`,
-      colorClass: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-900/40',
-      isUrgent: false
-    };
-  }
-  return {
-    text: `En ${days} días`,
-    colorClass: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800',
-    isUrgent: false
-  };
-}
-
-/**
- * Calcula la siguiente fecha para un pago recurrente cuando ya fue pagado
- */
-export function getNextRecurringDate(currentDueDate: string, recurrence: 'semanal' | 'mensual'): string {
-  const [y, m, d] = currentDueDate.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-
-  if (recurrence === 'semanal') {
-    date.setDate(date.getDate() + 7);
-  } else if (recurrence === 'mensual') {
-    date.setMonth(date.getMonth() + 1);
-  }
-
-  const newY = date.getFullYear();
-  const newM = String(date.getMonth() + 1).padStart(2, '0');
-  const newD = String(date.getDate()).padStart(2, '0');
-  return `${newY}-${newM}-${newD}`;
-}
-
-/**
- * Calcula el total de pagos en los próximos 15 días
- */
-export function getNext15DaysPaymentsSummary(payments: ScheduledPayment[], currentBalance: number) {
-  const upcoming = payments
-    .filter(p => !p.isPaid)
-    .filter(p => {
-      const diff = getDaysDifference(p.dueDate);
-      return diff >= 0 && diff <= 15;
-    });
-
-  const totalAmount = upcoming.reduce((sum, p) => sum + p.amount, 0);
-  const shortfall = Math.max(0, totalAmount - currentBalance);
-  const hasShortfall = shortfall > 0;
-
-  return {
-    upcomingCount: upcoming.length,
-    totalAmount,
-    shortfall,
-    hasShortfall,
-    currentBalance
-  };
+  const totalAmount = upcoming.reduce((acc, curr) => acc + curr.amount, 0);
+  return { upcoming, totalAmount };
 }

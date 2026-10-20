@@ -1,166 +1,153 @@
-# 🇨🇴 EduPlata - Finanzas para Universitarios
+# 🏢 MOAI Inmobiliaria — Suite Contable, Presupuestal y Junta de Socios
 
-**EduPlata** es una aplicación web moderna de finanzas personales diseñada especialmente para estudiantes universitarios en Colombia que administran presupuestos ajustados (mesada familiar, auxilios de sostenimiento, becas o trabajos de medio tiempo).
+Aplicación web empresarial desarrollada a la medida para los socios y el equipo directivo de **MOAI Inmobiliaria S.A.S.** ([www.inmobiliariamoai.com](https://www.inmobiliariamoai.com)) en Medellín, Antioquia (Calle 32C # 80A 45).
 
-Permite registrar gastos del día a día (almuerzos corrientazos, fotocopias, pasajes de bus/metro, polas de viernes), fijar presupuestos mensuales con alertas visuales, planificar metas de ahorro con cálculo de ritmo semanal/mensual, generar reportes en PDF y recibir diagnósticos inteligentes con **Google Gemini AI**.
-
----
-
-## 🚀 Características Principales
-
-1. **Registro de Movimientos:**
-   - Ingresos y Gastos en Pesos Colombianos (**COP** con formato `$1.000.000`).
-   - Categorías estudiantiles: *Comida (corrientazos/empanadas)*, *Transporte (TransMilenio/Metro/bus)*, *Fotocopias y útiles*, *Matrícula y semestre*, *Salidas y ocio (polas/rumbas)*, *Suscripciones (Spotify Universitario)*, *Salud*, *Otros*.
-   - Botones rápidos para gastos comunes universitarios ($1.500 tinto, $3.200 pasaje, $6.000 empanada, $14.000 almuerzo).
-   - Edición y eliminación en tiempo real con persistencia en `localStorage`.
-
-2. **Dashboard Visual e Interactivo:**
-   - Métricas: Saldo en bolsillo, Total de ingresos del mes, Total de gastos del mes, Límite mensual.
-   - **Alerta visual automática** cuando el usuario gasta más del 80% o el 100% de su presupuesto.
-   - Gráfico de dona interactivo (Recharts) con el porcentaje gastado por categoría.
-   - Gráfico de barras con la evolución de gastos en los últimos días con actividad.
-
-3. **Presupuesto Mensual:**
-   - Establece un tope mensual global y límites específicos por categoría.
-   - Barras de progreso con código de colores según el semáforo financiero:
-     - 🟢 **Verde:** Menos del 70% gastado (Zona segura).
-     - 🟡 **Amarillo:** Entre 70% y 90% gastado (Precaución).
-     - 🔴 **Rojo:** Más del 90% o superado (Alerta crítica).
-
-4. **Metas de Ahorro ("Marranito"):**
-   - Crea metas como *"Portátil nuevo para programar"*, *"Viaje de fin de semestre"* o *"Fondo para parciales"*.
-   - La app calcula automáticamente cuánto debes ahorrar por semana y por mes según la fecha límite.
-   - Botón *"Aportar Plata"* para ir sumando ahorros con animación de confeti 🎉 al cumplir la meta.
-
-5. **Asistente Inteligente con IA (Google Gemini):**
-   - **100% Privado:** Tu API Key se guarda únicamente en el `localStorage` de tu navegador; nunca viaja a ningún servidor ni queda escrita en el código.
-   - **Botón "Analizar mis finanzas":** Gemini examina tus movimientos y devuelve:
-     - Resumen amigable en lenguaje claro y motivador.
-     - Los 3 gastos donde más puedes recortar plata.
-     - 3 consejos de ahorro realistas para la vida universitaria en Colombia.
-   - **Chat Financiero Interactivo:** Pregúntale cosas como *"¿Me alcanza para ir a un concierto este mes?"* o *"¿Cómo ahorro $100.000?"* y responderá con base en tus cuentas reales.
-
-6. **Informe en PDF:**
-   - Descarga directa en el navegador generada con `jsPDF`.
-   - Incluye membrete con la marca EduPlata, datos del estudiante, KPIs, tabla completa de gastos por categoría, estado de las metas y los consejos de la IA.
-
-7. **Extras:**
-   - Modo Claro y Modo Oscuro con detección de preferencia del sistema.
-   - Copia de seguridad: Exportar e Importar datos en formato JSON.
-   - Datos de ejemplo precargados con botón para restablecer o vaciar.
-   - Diseño 100% responsive (optimizado para celular con barra inferior estilo app móvil).
+La plataforma permite el control contable estricto de la inmobiliaria, gestión de cartera de inmuebles administrados, cálculo automático de liquidaciones de canon a propietarios (comisión 10% + IVA), programación de pagos y vencimientos con exportación a Google Calendar / `.ics`, y un módulo exclusivo para la **Junta de Socios** con simulador de reparto de dividendos.
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 🎨 Identidad Visual y Colores Oficiales
 
-- **React 19** + **TypeScript**
-- **Vite 8** (con soporte base relativo para GitHub Pages)
-- **Tailwind CSS v4** (con temas claro/oscuro y tipografía fluida)
-- **Recharts** (gráficos de dona y barras responsivos)
-- **jsPDF** (generación y descarga de reportes PDF en el cliente)
-- **Google Gemini API** (`gemini-2.5-flash` mediante API REST en el cliente)
-- **Lucide Icons** & **Canvas-Confetti**
+- **Color Primario (MOAI Red):** `#e10b17`
+- **Rojo Oscuro:** `#c00510`
+- **Texto & Carbón Ejecutivo:** `#1e2022` / `#383b3d`
+- **Fondo:** Blanco y gris sutil `#f8f9fa` en modo claro; negro obsidiana `#0f1013` / `#15171c` en modo oscuro.
+- **Tipografías:** *Be Vietnam Pro* (títulos y encabezados) e *Instrument Sans* (cuerpo y datos).
+- **Montos:** Tipografía monoespaciada con formato en pesos colombianos (`$1.000.000 COP`).
 
 ---
 
-## 💻 Ejecución en Local
+## 🚀 ¿Cómo Levantarlo en GitHub Codespaces desde tu Fork (`daniagudelo06`)?
 
-### 1. Clonar el repositorio
+Si hiciste fork del repositorio a tu cuenta de GitHub (`daniagudelo06`) y vas a abrir un Codespace, sigue estos 3 pasos:
+
+### 1. Abrir la Terminal en tu Codespace
+En la parte inferior de tu pantalla en Codespaces (o presionando ``Ctrl + ` `` o ``Cmd + ` ``):
+
 ```bash
-git clone https://github.com/TU-USUARIO/bolsiuni.git
-cd bolsiuni
-```
-
-### 2. Instalar dependencias
-```bash
+# 1. Instalar todas las dependencias
 npm install
 ```
 
-### 3. Iniciar el servidor de desarrollo
+### 2. Configurar la clave de Claude (Anthropic)
+Copia el archivo `.env.example` a `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Abre el archivo `.env` y coloca tu clave de Claude si la tienes:
+```env
+ANTHROPIC_API_KEY="sk-ant-api03-tu-clave-aqui"
+PORT=3000
+```
+> **Nota importante:** Si aún no le has puesto tu clave de Claude, **¡la app funciona al 100%!** Cuenta con un motor heurístico offline especializado en jerga inmobiliaria colombiana que procesa inmediatamente cánones, comisiones, dispersiones y compras en lenguaje natural.
+
+### 3. Iniciar el Servidor de Desarrollo
 ```bash
 npm run dev
 ```
-Abre en tu navegador la URL que indique la consola (normalmente `http://localhost:3000` o `http://localhost:5173`).
+Codespaces detectará automáticamente el puerto **3000**. Haz clic en **"Open in Browser"** (Abrir en el navegador) y verás la suite contable en funcionamiento.
 
 ---
 
-## 🔑 Cómo Obtener tu API Key de Gemini Gratis
+## 💡 Innovaciones Contables Incorporadas ("Lo que una inmobiliaria necesita y los software genéricos no tienen")
 
-La app utiliza la inteligencia artificial de Google Gemini sin cobrarte nada:
+### 1. Separación Estricta de Fondos: Caja Propia MOAI vs. Fondo de Custodia de Propietarios
+En una inmobiliaria, cobrar un canon de $3.000.000 **NO** es ingreso de la empresa; es dinero de un tercero (el propietario). Mezclar la plata de los arriendos con la caja operativa es el error contable más común y peligroso.
 
-1. Ve a [Google AI Studio](https://aistudio.google.com/apikey) e inicia sesión con tu cuenta de Google.
-2. Haz clic en el botón azul **"Create API key"** (o "Crear clave de API").
-3. Selecciona tu proyecto o crea uno nuevo en un clic y copia la clave generada (empieza por `AIzaSy...`).
-4. En **EduPlata**, dirígete a la pestaña **Configuración** ⚙️ y pégala en el campo correspondiente.
-5. Haz clic en **"Probar Conexión"** y luego en **"Guardar Clave"**.
+- **Caja Operativa MOAI:** Registra exclusivamente el dinero que le pertenece a la inmobiliaria: comisiones de arrendamiento (8% - 10%), comisiones por ventas (3%), márgenes de reformas, mantenimientos locativos y mudanzas. De aquí se pagan la pauta en portales (Finca Raíz, Ciencuadras), la oficina, asesores e impuestos.
+- **Fondo de Custodia (Propietarios):** Registra los cánones brutos recaudados de inquilinos y las dispersiones netas transferidas a las cuentas bancarias de los dueños. Permite saber en todo momento cuánta plata en tránsito tiene la inmobiliaria en custodia.
 
-> 💡 **Nota de Seguridad:** La clave queda guardada **únicamente en tu propio navegador** mediante `localStorage`. Ningún tercero tiene acceso a ella.
+### 2. Liquidación Automática de Canon a Propietarios
+En la pestaña **Inmuebles & Contratos**, cada propiedad cuenta con un botón **"Liquidar Canon"** que calcula en un clic:
+$$\text{Canon Bruto} - \text{Comisión MOAI (10\%)} - \text{IVA sobre Comisión (19\%)} - \text{Cuota Admin Copropiedad} - \text{Mantenimientos} = \text{Neto a Dispersar}$$
+Al confirmar la liquidación, la app genera automáticamente los asientos en los libros contables sin riesgo de error humano.
+
+### 3. Módulo de Junta de Socios (Andrés, Juan Pablo, Simón)
+Diseñado específicamente para los 3 fundadores de MOAI Inmobiliaria:
+- Porcentajes accionarios y capital inicial aportado.
+- Cálculo de **Utilidad Neta Real** de la empresa.
+- Descuento de **Reserva Legal Obligatoria (10%)** (según Código de Comercio en Colombia) y reserva operativa de maniobra (15%).
+- **Simulador de Reparto de Dividendos:** Ingresa un monto a distribuir (ej. $15.000.000 COP) y calcula la cifra exacta para cada socio, permitiendo asentar los comprobantes de egreso correspondientes con un solo clic.
+
+### 4. Calendario y Fechas Clave del Negocio Inmobiliario
+- Días 1 al 10: Vencimiento de recaudo de cánones a inquilinos.
+- Días 10 al 15: Dispersión masiva a cuentas de propietarios.
+- Fin de mes: Pago de primas de pólizas colectivas a aseguradoras (El Libertador, Unifianza, FianzaCrédito).
+- Comparador de tesorería a 15 días: Alerta si el saldo disponible no alcanza para cubrir los pagos que vienen.
+- **Sincronización:** Cada compromiso cuenta con botón para añadir directo a **Google Calendar** y para **descargar archivo `.ics`** con alarma recordatoria (VALARM) para iPhone y Outlook.
+
+### 5. Cartera de Inmuebles Administrados
+Ficha completa de propiedades en Medellín, Laureles, El Poblado, Envigado, Sabaneta:
+- Datos del propietario y su cuenta bancaria de dispersión (Bancolombia, Davivienda, etc.).
+- Datos del inquilino y póliza de seguro de arrendamiento respaldada.
+- Estado: *Arrendado*, *Disponible*, *En Consignación Venta*, *En Reforma*.
+
+### 6. Asistente Inteligente de Registro (Claude Ready & Dictado por Voz)
+- Accesible desde el Dashboard y desde la pestaña **Asistente IA / Voz**.
+- Micrófono integrado con Web Speech API en español de Colombia (`es-CO`).
+- Entiende expresiones del sector inmobiliario:
+  - *"Cobramos canon de 2.600.000 del apto 402"*
+  - *"Comisión por venta de 19.5 millones de casa en Castropol"*
+  - *"Dispersión a Doña Martha Gómez de 2.290.600 el día 10"*
+  - *"Pagar pauta en Finca Raíz de 450 mil"*
+  - *"Reparación de tubería 180 lucas en local 5"*
+- **Confirmación previa:** Muestra tarjeta con desglose antes de guardar en libros contables.
+
+### 7. Exportación Contable
+- **Excel (CSV contable con UTF-8 BOM):** Con columnas de fecha, fondo contable, tipo, categoría, inmueble, concepto, comprobante y monto.
+- **Balance General en PDF:** Generado en el navegador con membrete corporativo oficial de MOAI Inmobiliaria, estado de caja, distribución de socios y libro diario.
 
 ---
 
-## 🌐 Cómo Desplegar en GitHub Pages
-
-La aplicación está preparada para compilarse como un sitio 100% estático frontend sin backend:
-
-1. Sube tu proyecto a un repositorio en GitHub:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit EduPlata"
-   git branch -M main
-   git remote add origin https://github.com/TU-USUARIO/bolsiuni.git
-   git push -u origin main
-   ```
-
-2. En tu repositorio en GitHub, ve a **Settings** > **Pages**.
-3. En la sección **Build and deployment**, en **Source** selecciona:
-   👉 **GitHub Actions**.
-4. ¡Listo! El workflow `.github/workflows/deploy.yml` incluido en el proyecto compilará y publicará la web automáticamente con cada push a la rama `main`. Tu app estará disponible en:
-   `https://TU-USUARIO.github.io/bolsiuni/`
-
----
-
-## 📁 Estructura del Código
+## 🏗️ Estructura del Código
 
 ```text
-├── .github/workflows/deploy.yml # Workflow de despliegue automático en GitHub Pages
-├── src/
-│   ├── components/
-│   │   ├── views/
-│   │   │   ├── DashboardView.tsx    # Dashboard principal con gráficos Recharts y KPIs
-│   │   │   ├── TransactionsView.tsx # Historial con filtros de búsqueda y orden
-│   │   │   ├── BudgetView.tsx       # Presupuesto mensual y límites por categoría
-│   │   │   ├── GoalsView.tsx        # Metas de ahorro y cálculos de ritmo
-│   │   │   ├── AIAssistantView.tsx  # Diagnóstico y chat con Google Gemini AI
-│   │   │   └── SettingsView.tsx     # Gestión de API key, perfil y respaldo JSON
-│   │   ├── Navbar.tsx               # Barra superior con saldo y exportación PDF
-│   │   ├── TabsNav.tsx              # Pestañas desktop y navegación fija móvil
-│   │   ├── TransactionModal.tsx     # Modal para registrar o editar movimientos
-│   │   ├── GoalModal.tsx            # Modal para crear o editar metas
-│   │   └── GoalDepositModal.tsx     # Modal para abonar a una meta con confeti
-│   ├── data/
-│   │   └── initialData.ts           # Datos de muestra de estudiante en Colombia
-│   ├── services/
-│   │   ├── gemini.ts                # Conexión pura en el cliente con Gemini API
-│   │   └── pdfReport.ts             # Generador de reportes PDF con jsPDF
-│   ├── types/
-│   │   └── index.ts                 # Definición de tipos TypeScript
-│   ├── utils/
-│   │   ├── categories.ts            # Catálogo de categorías universitarias
-│   │   └── formatters.ts            # Formateador de pesos COP ($1.000.000) y fechas
-│   ├── App.tsx                      # Componente raíz con estado y persistencia
-│   ├── main.tsx                     # Punto de entrada de React
-│   └── index.css                    # Configuración de Tailwind CSS v4 y modo oscuro
-├── index.html                       # HTML con metadatos y fuentes Google Fonts
-├── metadata.json                    # Metadatos de la aplicación
-├── package.json
-├── tsconfig.json
-└── vite.config.ts                   # Configuración de Vite con base relativa
+├── index.html                   # HTML con fuentes Be Vietnam Pro & Instrument Sans y branding MOAI
+├── metadata.json                # Metadatos de la aplicación
+├── package.json                 # Scripts y dependencias
+├── server.ts                    # Backend Express seguro + Proxy para la API de Claude (Anthropic)
+├── .env.example                 # Variables de entorno documentadas (ANTHROPIC_API_KEY)
+└── src/
+    ├── App.tsx                  # Componente raíz con estado central y persistencia
+    ├── index.css                # Tailwind CSS v4 con variables de diseño MOAI Red
+    ├── types/                   # Modelos de datos TypeScript (Inmuebles, Liquidación, Socios)
+    ├── data/
+    │   └── initialData.ts       # Datos semilla de cartera, socios y transacciones
+    ├── utils/
+    │   ├── categories.ts        # Catálogo de categorías inmobiliarias y mapeador inteligente
+    │   ├── calendarUtils.ts     # Generador de enlaces Google Calendar y archivos .ics
+    │   └── formatters.ts        # Formato de moneda COP y fechas colombianas
+    ├── services/
+    │   ├── claudeService.ts     # Conexión frontend segura con backend (/api/claude/chat)
+    │   ├── excelReport.ts       # Exportación CSV compatible con Excel
+    │   └── pdfReport.ts         # Generación de informe ejecutivo en PDF (jsPDF)
+    └── components/
+        ├── Navbar.tsx           # Barra superior con logo MOAI, saldos de caja y selector de socio
+        ├── TabsNav.tsx          # Pestañas ejecutivas de navegación y barra móvil
+        ├── QuickChatBar.tsx     # Barra de registro rápido WhatsApp style en Inicio
+        ├── UpcomingPaymentsCard.tsx # Tarjeta de compromisos y alertas de liquidez a 15 días
+        ├── TransactionModal.tsx # Modal de registro de movimiento contable
+        ├── PropertyModal.tsx    # Modal de ficha técnica de inmueble
+        └── views/
+            ├── DashboardView.tsx   # Panel ejecutivo con KPIs, gráficos y separación de caja
+            ├── PropertiesView.tsx  # Cartera de inmuebles y liquidación de canon
+            ├── TransactionsView.tsx# Libro diario contable de ingresos y egresos
+            ├── CalendarView.tsx    # Calendario interactivo mensual y pagos programados
+            ├── BudgetView.tsx      # Metas de ingresos y techo de gastos operativos
+            ├── PartnersView.tsx    # Módulo de socios fundadores y simulador de dividendos
+            ├── QuickChatView.tsx   # Asistente conversacional con voz y confirmaciones
+            └── SettingsView.tsx    # Ficha de la empresa, backup y guía de Codespaces
 ```
 
 ---
 
-## 📄 Licencia
+## 🔒 Seguridad de la API Key
 
-Este proyecto se distribuye bajo la licencia Apache-2.0. Desarrollado con 💚 para apoyar a los estudiantes universitarios de Colombia.
+- La clave `ANTHROPIC_API_KEY` se lee exclusivamente desde las variables de entorno del servidor en `server.ts`.
+- **Nunca** viaja al navegador ni queda expuesta en el código del cliente.
+
+---
+
+Desarrollado para **MOAI Inmobiliaria S.A.S.** • Medellín, Colombia.

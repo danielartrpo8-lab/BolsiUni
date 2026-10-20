@@ -1,6 +1,6 @@
 {
-  "name": "EduPlata - Finanzas para Universitarios",
-  "description": "App de finanzas personales pensada para estudiantes universitarios en Colombia. Registra movimientos en COP, controla tu presupuesto mensual, alcanza metas de ahorro y analiza tu bolsillo con IA.",
+  "name": "MOAI Inmobiliaria - Finanzas y Contabilidad",
+  "description": "Suite contable, presupuestal y de flujo de caja para MOAI Inmobiliaria (Medellín). Gestión de cánones, dispersiones a propietarios, comisiones de arriendo y venta, programación de pagos y reparto a socios.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

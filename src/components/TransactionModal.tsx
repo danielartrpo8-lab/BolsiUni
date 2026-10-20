@@ -2,13 +2,14 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
- * Modal para registrar o editar un movimiento (Gasto o Ingreso)
+ * MOAI Inmobiliaria - Modal para Asentar o Editar Movimiento Contable
+ * Soporte para caja propia MOAI vs custodia de propietarios, inmueble asociado y soporte de comprobante.
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Check, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
-import { CategoryId, MovementType, Transaction } from '../types';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../utils/categories';
+import { X, Check, Building2, Wallet } from 'lucide-react';
+import { CategoryId, FundType, MovementType, Property, Transaction } from '../types';
+import { MOAI_EXPENSE_CATEGORIES, MOAI_INCOME_CATEGORIES, getCategoryInfo } from '../utils/categories';
 import { formatCOP, getTodayDateString } from '../utils/formatters';
 
 interface TransactionModalProps {
@@ -17,7 +18,7 @@ interface TransactionModalProps {
   onSave: (transaction: Omit<Transaction, 'id' | 'createdAt'>, existingId?: string) => void;
   onDelete?: (id: string) => void;
   initialTransaction?: Transaction | null;
-  defaultType?: MovementType;
+  properties: Property[];
 }
 
 export const TransactionModal: React.FC<TransactionModalProps> = ({
@@ -26,339 +27,324 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   onSave,
   onDelete,
   initialTransaction,
-  defaultType = 'expense'
+  properties
 }) => {
-  const [type, setType] = useState<MovementType>(defaultType);
+  const [type, setType] = useState<MovementType>('income');
+  const [fundType, setFundType] = useState<FundType>('moai_operativa');
   const [amountStr, setAmountStr] = useState<string>('');
-  const [category, setCategory] = useState<CategoryId>(defaultType === 'income' ? 'mesada' : 'comida');
+  const [category, setCategory] = useState<CategoryId>('comision_arriendos');
+  const [propertyId, setPropertyId] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [recipientOrPayer, setRecipientOrPayer] = useState<string>('');
+  const [referenceNumber, setReferenceNumber] = useState<string>('');
   const [date, setDate] = useState<string>(getTodayDateString());
-  const [note, setNote] = useState<string>('');
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
     if (initialTransaction) {
       setType(initialTransaction.type);
+      setFundType(initialTransaction.fundType || 'moai_operativa');
       setAmountStr(initialTransaction.amount.toString());
       setCategory(initialTransaction.category);
+      setPropertyId(initialTransaction.propertyId || '');
+      setDescription(initialTransaction.description);
+      setRecipientOrPayer(initialTransaction.recipientOrPayer || '');
+      setReferenceNumber(initialTransaction.referenceNumber || '');
       setDate(initialTransaction.date);
-      setNote(initialTransaction.note || '');
     } else {
-      const initType = defaultType || 'expense';
-      setType(initType);
+      setType('income');
+      setFundType('moai_operativa');
       setAmountStr('');
-      setCategory(initType === 'income' ? 'mesada' : 'comida');
+      setCategory('comision_arriendos');
+      setPropertyId('');
+      setDescription('');
+      setRecipientOrPayer('');
+      setReferenceNumber(`COMP-${Date.now().toString().slice(-5)}`);
       setDate(getTodayDateString());
-      setNote('');
     }
     setError('');
-  }, [initialTransaction, isOpen, defaultType]);
+  }, [initialTransaction, isOpen]);
 
-  // Cuando cambia el tipo, ajustar la categoría por defecto si no concuerda
+  if (!isOpen) return null;
+
   const handleTypeChange = (newType: MovementType) => {
     setType(newType);
-    if (newType === 'expense' && !(category in EXPENSE_CATEGORIES)) {
-      setCategory('comida');
-    } else if (newType === 'income' && !(category in INCOME_CATEGORIES)) {
-      setCategory('mesada');
+    if (newType === 'income') {
+      setCategory('comision_arriendos');
+    } else {
+      setCategory(fundType === 'custodia_propietarios' ? 'dispersion_propietarios' : 'portales_marketing');
     }
   };
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Permitir solo números
-    const raw = e.target.value.replace(/[^0-9]/g, '');
-    setAmountStr(raw);
-    setError('');
-  };
-
-  const handleQuickAmount = (val: number, defaultNote?: string) => {
-    setAmountStr(val.toString());
-    if (defaultNote && !note) {
-      setNote(defaultNote);
+  const handleFundChange = (newFund: FundType) => {
+    setFundType(newFund);
+    if (newFund === 'custodia_propietarios') {
+      setCategory(type === 'income' ? 'recaudo_canon' : 'dispersion_propietarios');
+    } else {
+      setCategory(type === 'income' ? 'comision_arriendos' : 'portales_marketing');
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsedAmount = parseInt(amountStr, 10);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError('Por favor ingresa un monto válido mayor a cero en pesos COP.');
+    const cleanAmount = parseInt(amountStr.replace(/\D/g, ''), 10);
+    if (isNaN(cleanAmount) || cleanAmount <= 0) {
+      setError('Por favor ingresa un monto válido mayor a 0');
+      return;
+    }
+    if (!description.trim()) {
+      setError('Por favor ingresa el concepto o descripción');
       return;
     }
 
-    if (!date) {
-      setError('Selecciona la fecha del movimiento.');
-      return;
-    }
+    const selectedProp = properties.find(p => p.id === propertyId);
 
-    onSave(
-      {
-        type,
-        amount: parsedAmount,
-        category,
-        date,
-        note: note.trim()
-      },
-      initialTransaction?.id
-    );
+    onSave({
+      type,
+      fundType,
+      amount: cleanAmount,
+      category,
+      date,
+      description: description.trim(),
+      propertyId: propertyId || undefined,
+      propertyCode: selectedProp ? selectedProp.code : undefined,
+      recipientOrPayer: recipientOrPayer.trim() || undefined,
+      referenceNumber: referenceNumber.trim() || undefined
+    }, initialTransaction?.id);
 
     onClose();
   };
 
-  if (!isOpen) return null;
-
-  const currentCategories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-  const numAmount = parseInt(amountStr, 10) || 0;
+  const currentCategories = type === 'income' ? MOAI_INCOME_CATEGORIES : MOAI_EXPENSE_CATEGORIES;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
-        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Cabecera del modal */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              {initialTransaction ? 'Editar Movimiento' : 'Nuevo Movimiento'}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Registra cada peso para que la plata rinda hasta final de mes
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-[#15171c] w-full max-w-lg rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl p-6 overflow-y-auto max-h-[92vh]">
+        
+        {/* Cabecera */}
+        <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-800">
+          <h3 className="font-bold text-base text-gray-900 dark:text-white font-heading">
+            {initialTransaction ? 'Editar Asiento Contable' : 'Asentar Nuevo Movimiento en Libros'}
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5">
+        {error && (
+          <div className="mt-3 p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4 text-xs">
           
-          {/* Selector de Tipo: Gasto vs Ingreso */}
-          <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl">
-            <button
-              type="button"
-              onClick={() => handleTypeChange('expense')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                type === 'expense'
-                  ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <ArrowDownLeft className="w-4 h-4" />
-              <span>Gasto</span>
-            </button>
+          {/* Selector de Tipo (Ingreso / Egreso) */}
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => handleTypeChange('income')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              className={`py-2 rounded-xl font-bold transition-all ${
                 type === 'income'
-                  ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-[#1a1d23] text-gray-600 dark:text-gray-300'
               }`}
             >
-              <ArrowUpRight className="w-4 h-4" />
-              <span>Ingreso</span>
+              + Ingreso
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTypeChange('expense')}
+              className={`py-2 rounded-xl font-bold transition-all ${
+                type === 'expense'
+                  ? 'bg-[#e10b17] text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-[#1a1d23] text-gray-600 dark:text-gray-300'
+              }`}
+            >
+              - Egreso
             </button>
           </div>
 
-          {/* Campo Monto en COP */}
+          {/* Selector de Fondo (Caja MOAI vs Custodia Terceros) */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-              Monto en Pesos Colombianos (COP) *
+            <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+              Destino Contable (Fondo):
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleFundChange('moai_operativa')}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  fundType === 'moai_operativa'
+                    ? 'border-[#e10b17] bg-red-50/50 dark:bg-red-950/20 text-[#e10b17]'
+                    : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#1c1f26] text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                <span className="font-bold block text-xs">Caja Operativa MOAI</span>
+                <span className="text-[10px] text-gray-500 block">Comisiones, servicios, nómina</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleFundChange('custodia_propietarios')}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  fundType === 'custodia_propietarios'
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300'
+                    : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#1c1f26] text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                <span className="font-bold block text-xs">Custodia Propietarios</span>
+                <span className="text-[10px] text-gray-500 block">Recaudo y giros de cánones</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Monto en COP */}
+          <div>
+            <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+              Monto en COP:
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-slate-400 dark:text-slate-500 font-mono">
-                $
-              </span>
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-gray-400">$</span>
               <input
                 type="text"
-                inputMode="numeric"
-                value={amountStr ? parseInt(amountStr, 10).toLocaleString('es-CO') : ''}
-                onChange={handleAmountChange}
-                placeholder="15.000"
-                autoFocus
-                className="w-full pl-10 pr-4 py-3.5 text-2xl font-bold font-mono bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                required
+                value={amountStr}
+                onChange={(e) => setAmountStr(e.target.value)}
+                placeholder="Ej: 2.600.000 o 450.000"
+                className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl pl-8 pr-3 py-2 text-base font-mono font-bold text-gray-900 dark:text-white"
               />
             </div>
-            {numAmount > 0 && (
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Registrando: <strong className="text-slate-700 dark:text-slate-200">{formatCOP(numAmount)} COP</strong>
-              </p>
-            )}
-
-            {/* Atajos rápidos universitarios */}
-            {type === 'expense' ? (
-              <div className="flex flex-wrap gap-1.5 mt-2.5">
-                <span className="text-[11px] text-slate-400 flex items-center mr-1">Rápido:</span>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAmount(1500, 'Tinto en la cafetería')}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                >
-                  $1.500 Tinto
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAmount(3200, 'Pasaje de transporte')}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                >
-                  $3.200 Bus/Metro
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAmount(6000, 'Empanada con gaseosa')}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                >
-                  $6.000 Empanada
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAmount(14000, 'Almuerzo corrientazo U')}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                >
-                  $14.000 Corrientazo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAmount(35000, 'Polas de viernes con amigos')}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                >
-                  $35.000 Polas
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-1.5 mt-2.5">
-                <span className="text-[11px] text-slate-400 flex items-center mr-1">Rápido:</span>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAmount(50000, 'Venta o trabajito')}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                >
-                  $50.000
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAmount(200000, 'Pago monitoría/trabajo')}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                >
-                  $200.000
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAmount(650000, 'Mesada del mes')}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-                >
-                  $650.000 Mesada
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Categoría */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-              Categoría *
+            <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+              Categoría Contable:
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {Object.values(currentCategories).map((cat) => {
-                const isSelected = category === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setCategory(cat.id)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-center transition-all ${
-                      isSelected
-                        ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 shadow-sm'
-                        : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="text-2xl mb-1">{cat.emoji}</span>
-                    <span className={`text-xs font-semibold leading-tight line-clamp-1 ${isSelected ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-300'}`}>
-                      {cat.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as any)}
+              className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white cursor-pointer"
+            >
+              {Object.values(currentCategories).map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.emoji} {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Fecha y Nota */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Inmueble Asociado */}
+          <div>
+            <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+              Inmueble Vinculado (Opcional):
+            </label>
+            <select
+              value={propertyId}
+              onChange={(e) => setPropertyId(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white cursor-pointer"
+            >
+              <option value="">-- Operación General de la Empresa --</option>
+              {properties.map((prop) => (
+                <option key={prop.id} value={prop.id}>
+                  {prop.code} - {prop.title} ({prop.neighborhood})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Concepto / Descripción */}
+          <div>
+            <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+              Concepto / Descripción del Asiento:
+            </label>
+            <input
+              type="text"
+              required
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ej: Recaudo canon mensual Apto 402 Laureles"
+              className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white"
+            />
+          </div>
+
+          {/* Beneficiario / Pagador y Referencia */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                Fecha *
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                Nota u Ocasión (Opcional)
+              <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+                Beneficiario / Pagador:
               </label>
               <input
                 type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Ej: Almuerzo frente a la portería"
-                maxLength={80}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400"
+                value={recipientOrPayer}
+                onChange={(e) => setRecipientOrPayer(e.target.value)}
+                placeholder="Ej: Santiago Restrepo"
+                className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+                N° Comprobante / Ref:
+              </label>
+              <input
+                type="text"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+                className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs font-mono text-gray-900 dark:text-white"
               />
             </div>
           </div>
 
-          {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-medium">
-              {error}
-            </div>
-          )}
+          {/* Fecha */}
+          <div>
+            <label className="text-gray-600 dark:text-gray-400 block mb-1 font-semibold">
+              Fecha de la Operación:
+            </label>
+            <input
+              type="date"
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-[#1c1f26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white"
+            />
+          </div>
 
-          {/* Botones de acción */}
-          <div className="flex items-center justify-between pt-2">
+          {/* Botones */}
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
             {initialTransaction && onDelete ? (
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm('¿Seguro que deseas eliminar este movimiento?')) {
+                  if (window.confirm('¿Eliminar este asiento contable?')) {
                     onDelete(initialTransaction.id);
                     onClose();
                   }
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-colors"
+                className="text-xs text-rose-600 hover:underline font-semibold"
               >
-                <Trash2 className="w-4 h-4" />
-                <span>Eliminar</span>
+                Eliminar Asiento
               </button>
-            ) : (
-              <div />
-            )}
+            ) : <div />}
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 font-semibold"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-sm transition-all cursor-pointer"
+                className="bg-[#e10b17] hover:bg-[#c00510] text-white px-5 py-2 rounded-xl font-bold shadow-xs transition-all"
               >
-                <Check className="w-4 h-4" />
-                <span>{initialTransaction ? 'Guardar Cambios' : 'Registrar'}</span>
+                {initialTransaction ? 'Actualizar Asiento' : 'Asentar en Libros'}
               </button>
             </div>
           </div>
 
         </form>
+
       </div>
     </div>
   );
